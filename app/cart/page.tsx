@@ -10,20 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  ArrowLeft,
-  Minus,
-  Plus,
-  Trash2,
-  Heart,
-  ShoppingCart,
-  Truck,
-  Shield,
-  Tag,
-  Gift,
-  Clock,
-  AlertCircle,
-} from "lucide-react"
+import { ArrowLeft, Minus, Plus, Trash2, Heart, ShoppingCart, Truck, Shield, Tag, Gift, Clock, AlertCircle, Percent } from 'lucide-react'
 
 const mockCartItems = [
   {
@@ -144,6 +131,12 @@ export default function CartPage() {
     if (promoCode.toUpperCase() === "SAVE10") {
       setPromoApplied(true)
       alert("Promo code applied! 10% discount added.")
+    } else if (promoCode.toUpperCase() === "SAVE20") {
+      setPromoApplied(true)
+      alert("Promo code applied! 20% discount added.");
+    } else if (promoCode.toUpperCase() === "FIRST50") {
+      setPromoApplied(true)
+      alert("Promo code applied! $50 discount added.");
     } else {
       alert("Invalid promo code")
     }
@@ -376,26 +369,74 @@ export default function CartPage() {
                   <CardTitle>Order Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Promo Code */}
-                  <div className="space-y-2">
-                    <Label>Promo Code</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Enter code"
-                        value={promoCode}
-                        onChange={(e) => setPromoCode(e.target.value)}
-                        disabled={promoApplied}
-                      />
-                      <Button variant="outline" onClick={applyPromoCode} disabled={promoApplied || !promoCode}>
-                        Apply
-                      </Button>
-                    </div>
-                    {promoApplied && (
-                      <div className="flex items-center gap-2 text-green-600">
-                        <Tag className="h-4 w-4" />
-                        <span className="text-sm">SAVE10 applied!</span>
+                  {/* Enhanced Promo Code Section */}
+                  <div className="space-y-4">
+                    <Label className="text-base font-semibold">Available Offers</Label>
+
+                    {/* Quick Apply Coupons */}
+                    <div className="grid grid-cols-1 gap-2">
+                      <div className="border rounded-lg p-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-green-100 p-2 rounded">
+                            <Percent className="h-4 w-4 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">SAVE20</p>
+                            <p className="text-xs text-muted-foreground">20% off up to $50</p>
+                          </div>
+                        </div>
+                        <Button size="sm" variant="outline" onClick={() => {
+                          setPromoCode("SAVE20")
+                          applyPromoCode()
+                        }}>
+                          Apply
+                        </Button>
                       </div>
-                    )}
+
+                      <div className="border rounded-lg p-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-blue-100 p-2 rounded">
+                            <Gift className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">FIRST50</p>
+                            <p className="text-xs text-muted-foreground">$50 off on first order</p>
+                          </div>
+                        </div>
+                        <Button size="sm" variant="outline" onClick={() => {
+                          setPromoCode("FIRST50")
+                          applyPromoCode()
+                        }}>
+                          Apply
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Manual Promo Code Entry */}
+                    <div className="border-t pt-4">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Enter coupon code"
+                          value={promoCode}
+                          onChange={(e) => setPromoCode(e.target.value)}
+                          disabled={promoApplied}
+                          className="flex-1"
+                        />
+                        <Button variant="outline" onClick={applyPromoCode} disabled={promoApplied || !promoCode}>
+                          {promoApplied ? "Applied" : "Apply"}
+                        </Button>
+                      </div>
+                      {promoApplied && (
+                        <div className="flex items-center gap-2 text-green-600 mt-2">
+                          <Tag className="h-4 w-4" />
+                          <span className="text-sm">Coupon applied successfully!</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <Button variant="ghost" className="w-full text-blue-600" onClick={() => router.push("/offers")}>
+                      View All Offers & Coupons
+                    </Button>
                   </div>
 
                   <Separator />

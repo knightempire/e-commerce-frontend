@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, CreditCard, Truck, Shield, Tag } from "lucide-react"
+import { ArrowLeft, CreditCard, Truck, Shield, Tag } from 'lucide-react'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -39,9 +39,23 @@ export default function CheckoutPage() {
   const [errors, setErrors] = useState({})
 
   useEffect(() => {
-    const savedOrderData = localStorage.getItem("orderData")
-    if (savedOrderData) {
-      setOrderData(JSON.parse(savedOrderData))
+    // Check for cart order data first, then single product order data
+    const cartOrderData = localStorage.getItem("cartOrderData")
+    const singleOrderData = localStorage.getItem("orderData")
+    
+    if (cartOrderData) {
+      const data = JSON.parse(cartOrderData)
+      // Convert cart data to checkout format
+      setOrderData({
+        product: data.items[0], // For display purposes, show first item
+        items: data.items,
+        selectedVariants: data.items[0]?.selectedVariants || { color: "black", size: "standard" },
+        quantity: data.items.reduce((sum, item) => sum + item.quantity, 0),
+        subtotal: data.subtotal,
+        isCartOrder: true
+      })
+    } else if (singleOrderData) {
+      setOrderData(JSON.parse(singleOrderData))
     } else {
       router.push("/")
     }
@@ -407,24 +421,51 @@ export default function CheckoutPage() {
                 <CardTitle>Order Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex gap-4">
-                  <div className="w-20 h-20 relative rounded-lg overflow-hidden border">
-                    <Image
-                      src={orderData.product.images[0] || "/placeholder.svg"}
-                      alt={orderData.product.name}
-                      fill
-                      className="object-cover"
-                    />
+                {orderData.isCartOrder ? (
+                  // Multiple items from cart
+                  <div className="space-y-4">
+                    {orderData.items.map((item, index) => (
+                      <div key={index} className="flex gap-4">
+                        <div className="w-16 h-16 relative rounded-lg overflow-hidden border">
+                          <Image
+                            src={item.image || "/placeholder.svg"}
+                            alt={item.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-sm">{item.name}</h3>
+                          <p className="text-xs text-muted-foreground">
+                            {item.color && `Color: ${item.color}`} {item.size && `| Size: ${item.size}`}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                          <p className="font-semibold">${item.price.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold">{orderData.product.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Color: {orderData.selectedVariants.color} | Size: {orderData.selectedVariants.size}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Qty: {orderData.quantity}</p>
-                    <p className="font-semibold">${orderData.product.price.toFixed(2)}</p>
+                ) : (
+                  // Single item
+                  <div className="flex gap-4">
+                    <div className="w-20 h-20 relative rounded-lg overflow-hidden border">
+                      <Image
+                        src={orderData.product.images[0] || "/placeholder.svg"}
+                        alt={orderData.product.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold">{orderData.product.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Color: {orderData.selectedVariants.color} | Size: {orderData.selectedVariants.size}
+                      </p>
+                      <p className="text-sm text-muted-foreground">Qty: {orderData.quantity}</p>
+                      <p className="font-semibold">${orderData.product.price.toFixed(2)}</p>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <Separator />
 

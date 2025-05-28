@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Heart, Star, ShoppingCart, Search, Filter, Grid, List, Zap, Gift, Truck, User } from "lucide-react"
+import { Heart, Star, ShoppingCart, Search, Filter, Grid, List, Zap, Gift, Truck, User } from 'lucide-react'
+import { OfferBanner } from "@/components/offer-banner"
 
 const products = [
   {
@@ -222,6 +223,9 @@ export default function HomePage() {
               AudioStore
             </h1>
             <div className="flex items-center gap-4">
+              <Button variant="ghost" onClick={() => router.push("/offers")} className="text-orange-600 font-medium">
+                🔥 Offers
+              </Button>
               <Button variant="ghost" size="icon" onClick={() => router.push("/profile")}>
                 <User className="h-5 w-5" />
               </Button>
@@ -242,8 +246,10 @@ export default function HomePage() {
         </div>
       </header>
 
+      <OfferBanner />
+
       {/* Hero Section with Offers */}
-      <section className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-12">
+      {/* <section className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-12">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
             <h2 className="text-4xl font-bold mb-4">Premium Audio Equipment</h2>
@@ -267,7 +273,7 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       <div className="container mx-auto px-4 py-8">
         {/* Filters and Search */}

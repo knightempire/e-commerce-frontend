@@ -124,12 +124,13 @@ export default function ThankYouPage() {
                   <h3 className="font-semibold mb-4">Items Ordered</h3>
                   <div className="flex gap-4 p-4 border rounded-lg">
                     <div className="w-20 h-20 relative rounded-lg overflow-hidden">
-                      <Image
-                        src={orderData.product.images[0] || "/placeholder.svg"}
-                        alt={orderData.product.name}
-                        fill
-                        className="object-cover"
-                      />
+                    <Image
+                      src={orderData.product?.images?.[0] || "/placeholder.svg"}
+                      alt={orderData.product?.name || "Product image"}
+                      fill
+                      className="object-cover"
+                    />
+
                     </div>
                     <div className="flex-1">
                       <h4 className="font-semibold">{orderData.product.name}</h4>

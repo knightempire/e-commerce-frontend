@@ -20,6 +20,7 @@ export default function CheckoutPage() {
   const [promoCode, setPromoCode] = useState("")
   const [promoApplied, setPromoApplied] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState("card")
+  const [transactionError, setTransactionError] = useState("")
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -83,25 +84,6 @@ export default function CheckoutPage() {
     if (paymentMethod === "card") {
       if (!formData.cardNumber.trim()) {
         newErrors.cardNumber = "Card number is required"
-      } else if (!/^\d{16}$/.test(formData.cardNumber.replace(/\s/g, ""))) {
-        newErrors.cardNumber = "Card number must be 16 digits"
-      }
-
-      if (!formData.expiryDate.trim()) {
-        newErrors.expiryDate = "Expiry date is required"
-      } else {
-        const [month, year] = formData.expiryDate.split("/")
-        const currentDate = new Date()
-        const expiryDate = new Date(2000 + Number.parseInt(year), Number.parseInt(month) - 1)
-        if (expiryDate <= currentDate) {
-          newErrors.expiryDate = "Expiry date must be in the future"
-        }
-      }
-
-      if (!formData.cvv.trim()) {
-        newErrors.cvv = "CVV is required"
-      } else if (!/^\d{3}$/.test(formData.cvv)) {
-        newErrors.cvv = "CVV must be 3 digits"
       }
     }
 
@@ -114,23 +96,15 @@ export default function CheckoutPage() {
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }))
     }
+    if (transactionError) {
+      setTransactionError("")
+    }
   }
 
   const applyPromoCode = () => {
     if (promoCode.toUpperCase() === "SAVE10") {
       setPromoApplied(true)
-      alert("Promo code applied! 10% discount added.")
-    } else {
-      alert("Invalid promo code")
     }
-  }
-
-  const simulateTransaction = () => {
-    const outcomes = ["approved", "declined", "error"]
-    const randomOutcome = outcomes[Math.floor(Math.random() * outcomes.length)]
-
-    // For demo purposes, let's make it mostly successful
-    return Math.random() > 0.2 ? "approved" : randomOutcome
   }
 
   const handleSubmit = async (e) => {
@@ -141,11 +115,26 @@ export default function CheckoutPage() {
     }
 
     setIsLoading(true)
+    setTransactionError("")
 
     // Simulate processing time
     await new Promise((resolve) => setTimeout(resolve, 2000))
 
-    const transactionResult = simulateTransaction()
+    const cardNumberDigits = formData.cardNumber.replace(/\D/g, "")
+
+    let transactionResult = "error" // default to error
+
+    if (cardNumberDigits === "1") {
+      transactionResult = "approved"
+    } else if (cardNumberDigits === "2") {
+      transactionResult = "declined"
+    } else if (cardNumberDigits === "3") {
+      transactionResult = "error"
+    }
+    else{
+      transactionResult = "approved"
+    }
+
 
     if (transactionResult === "approved") {
       const orderNumber = `ORD-${Date.now()}`
@@ -162,9 +151,9 @@ export default function CheckoutPage() {
       localStorage.setItem("finalOrder", JSON.stringify(finalOrderData))
       router.push("/thank-you")
     } else if (transactionResult === "declined") {
-      alert("Transaction declined. Please check your payment information and try again.")
+      setTransactionError("Transaction declined. Please check your payment information and try again.")
     } else {
-      alert("Payment gateway error. Please try again later.")
+      setTransactionError("Payment gateway errors. Please try again later.")
     }
 
     setIsLoading(false)
@@ -195,7 +184,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
@@ -422,6 +411,7 @@ export default function CheckoutPage() {
                 </CardContent>
               </Card>
 
+              {/* Submit Button */}
               <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
                 {isLoading ? "Processing..." : `Complete Order - $${total.toFixed(2)}`}
               </Button>
@@ -436,7 +426,6 @@ export default function CheckoutPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {orderData.isCartOrder ? (
-                  // Multiple items from cart
                   <div className="space-y-4">
                     {orderData.items.map((item, index) => (
                       <div key={index} className="flex gap-4">
@@ -461,7 +450,6 @@ export default function CheckoutPage() {
                     ))}
                   </div>
                 ) : (
-                  // Single item
                   <div className="flex gap-4">
                     <div className="w-20 h-20 relative rounded-lg overflow-hidden border">
                       <Image
@@ -484,7 +472,6 @@ export default function CheckoutPage() {
 
                 <Separator />
 
-                {/* Promo Code */}
                 <div className="space-y-2">
                   <Label>Promo Code</Label>
                   <div className="flex gap-2">
@@ -513,7 +500,6 @@ export default function CheckoutPage() {
 
                 <Separator />
 
-                {/* Price Breakdown */}
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
@@ -540,7 +526,6 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Shipping Info */}
                 <div className="bg-muted p-4 rounded-lg space-y-2">
                   <div className="flex items-center gap-2">
                     <Truck className="h-4 w-4" />
@@ -556,6 +541,37 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+
+      {/* Transaction error message in bottom right */}
+      {transactionError && (
+        <div
+          className="fixed bottom-4 right-4 max-w-md p-4 border border-red-400 rounded-lg bg-gradient-to-b from-red-100 to-red-50 flex items-start space-x-3 shadow-md z-50"
+          role="alert"
+        >
+          <div className="flex-shrink-0">
+            <div className="w-10 h-10 flex items-center justify-center bg-white border border-red-300 rounded-full">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="w-6 h-6 text-red-500"
+                aria-hidden="true"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"
+                  clipRule="evenodd"
+                ></path>
+              </svg>
+            </div>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Error</h3>
+            <p className="text-gray-700 text-sm">{transactionError}</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+

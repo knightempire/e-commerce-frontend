@@ -40,6 +40,20 @@ export default function ThankYouPage() {
     alert("Order shared!")
   }
 
+  // Helper function to safely get price
+  const getProductPrice = (product) => {
+    if (typeof product?.extracted_price === "number") {
+      return product.extracted_price
+    }
+    if (typeof product?.price === "string") {
+      const match = product.price.match(/[\d,]+\.?\d*/g)
+      if (match) {
+        return Number.parseFloat(match[0].replace(/,/g, ""))
+      }
+    }
+    return 0
+  }
+
   if (!orderData) {
     return <div>Loading...</div>
   }
@@ -122,25 +136,52 @@ export default function ThankYouPage() {
                 {/* Product Details */}
                 <div>
                   <h3 className="font-semibold mb-4">Items Ordered</h3>
-                  <div className="flex gap-4 p-4 border rounded-lg">
-                    <div className="w-20 h-20 relative rounded-lg overflow-hidden">
-                    <Image
-                      src={orderData.product?.images?.[0] || "/placeholder.svg"}
-                      alt={orderData.product?.name || "Product image"}
-                      fill
-                      className="object-cover"
-                    />
-
+                  {orderData.isCartOrder ? (
+                    // Multiple items from cart
+                    <div className="space-y-4">
+                      {orderData.items.map((item, index) => (
+                        <div key={index} className="flex gap-4 p-4 border rounded-lg">
+                          <div className="w-20 h-20 relative rounded-lg overflow-hidden">
+                            <Image
+                              src={item.thumbnail || "/placeholder.svg"}
+                              alt={item.title}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold">{item.title}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {item.selectedVariants?.color && `Color: ${item.selectedVariants.color}`}
+                              {item.selectedVariants?.size && ` | Size: ${item.selectedVariants.size}`}
+                            </p>
+                            <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
+                            <p className="font-semibold mt-2">${getProductPrice(item).toFixed(2)}</p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold">{orderData.product.name}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Color: {orderData.selectedVariants.color} | Size: {orderData.selectedVariants.size}
-                      </p>
-                      <p className="text-sm text-muted-foreground">Quantity: {orderData.quantity}</p>
-                      <p className="font-semibold mt-2">${orderData.product.price.toFixed(2)}</p>
+                  ) : (
+                    // Single item
+                    <div className="flex gap-4 p-4 border rounded-lg">
+                      <div className="w-20 h-20 relative rounded-lg overflow-hidden">
+                        <Image
+                          src={orderData.product.thumbnail || "/placeholder.svg"}
+                          alt={orderData.product.title}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold">{orderData.product.title}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Color: {orderData.selectedVariants.color} | Size: {orderData.selectedVariants.size}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Quantity: {orderData.quantity}</p>
+                        <p className="font-semibold mt-2">${getProductPrice(orderData.product).toFixed(2)}</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Action Buttons */}

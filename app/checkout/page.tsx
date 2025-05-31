@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, CreditCard, Truck, Shield, Tag } from 'lucide-react'
+import { ArrowLeft, CreditCard, Truck, Shield, Tag } from "lucide-react"
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -42,7 +42,7 @@ export default function CheckoutPage() {
     // Check for cart order data first, then single product order data
     const cartOrderData = localStorage.getItem("cartOrderData")
     const singleOrderData = localStorage.getItem("orderData")
-    
+
     if (cartOrderData) {
       const data = JSON.parse(cartOrderData)
       // Convert cart data to checkout format
@@ -52,7 +52,7 @@ export default function CheckoutPage() {
         selectedVariants: data.items[0]?.selectedVariants || { color: "black", size: "standard" },
         quantity: data.items.reduce((sum, item) => sum + item.quantity, 0),
         subtotal: data.subtotal,
-        isCartOrder: true
+        isCartOrder: true,
       })
     } else if (singleOrderData) {
       setOrderData(JSON.parse(singleOrderData))
@@ -179,6 +179,20 @@ export default function CheckoutPage() {
   const discount = promoApplied ? subtotal * 0.1 : 0
   const tax = (subtotal - discount + shipping) * 0.08
   const total = subtotal - discount + shipping + tax
+
+  // Helper function to safely get price
+  const getProductPrice = (product) => {
+    if (typeof product.extracted_price === "number") {
+      return product.extracted_price
+    }
+    if (typeof product.price === "string") {
+      const match = product.price.match(/[\d,]+\.?\d*/g)
+      if (match) {
+        return Number.parseFloat(match[0].replace(/,/g, ""))
+      }
+    }
+    return 0
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -428,19 +442,20 @@ export default function CheckoutPage() {
                       <div key={index} className="flex gap-4">
                         <div className="w-16 h-16 relative rounded-lg overflow-hidden border">
                           <Image
-                            src={item.image || "/placeholder.svg"}
-                            alt={item.name}
+                            src={item.thumbnail || "/placeholder.svg"}
+                            alt={item.title}
                             fill
                             className="object-cover"
                           />
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-semibold text-sm">{item.name}</h3>
+                          <h3 className="font-semibold text-sm">{item.title}</h3>
                           <p className="text-xs text-muted-foreground">
-                            {item.color && `Color: ${item.color}`} {item.size && `| Size: ${item.size}`}
+                            {item.selectedVariants?.color && `Color: ${item.selectedVariants.color}`}
+                            {item.selectedVariants?.size && ` | Size: ${item.selectedVariants.size}`}
                           </p>
                           <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
-                          <p className="font-semibold">${item.price.toFixed(2)}</p>
+                          <p className="font-semibold">${getProductPrice(item).toFixed(2)}</p>
                         </div>
                       </div>
                     ))}
@@ -450,19 +465,19 @@ export default function CheckoutPage() {
                   <div className="flex gap-4">
                     <div className="w-20 h-20 relative rounded-lg overflow-hidden border">
                       <Image
-                        src={orderData.product.images[0] || "/placeholder.svg"}
-                        alt={orderData.product.name}
+                        src={orderData.product.thumbnail || "/placeholder.svg"}
+                        alt={orderData.product.title}
                         fill
                         className="object-cover"
                       />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold">{orderData.product.name}</h3>
+                      <h3 className="font-semibold">{orderData.product.title}</h3>
                       <p className="text-sm text-muted-foreground">
                         Color: {orderData.selectedVariants.color} | Size: {orderData.selectedVariants.size}
                       </p>
                       <p className="text-sm text-muted-foreground">Qty: {orderData.quantity}</p>
-                      <p className="font-semibold">${orderData.product.price.toFixed(2)}</p>
+                      <p className="font-semibold">${getProductPrice(orderData.product).toFixed(2)}</p>
                     </div>
                   </div>
                 )}

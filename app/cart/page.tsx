@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -10,143 +9,81 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, Minus, Plus, Trash2, Heart, ShoppingCart, Truck, Shield, Tag, Gift, Clock, AlertCircle, Percent } from 'lucide-react'
-
-const mockCartItems = [
-  {
-    id: 1,
-    name: "Premium Wireless Headphones",
-    price: 299.99,
-    originalPrice: 399.99,
-    image: "/placeholder.svg?height=150&width=150",
-    quantity: 1,
-    color: "Midnight Black",
-    size: "Standard",
-    inStock: 47,
-    isOnSale: true,
-    estimatedDelivery: "2-3 days",
-  },
-  {
-    id: 2,
-    name: "Wireless Earbuds Pro",
-    price: 199.99,
-    originalPrice: 249.99,
-    image: "/placeholder.svg?height=150&width=150",
-    quantity: 2,
-    color: "Pearl White",
-    size: null,
-    inStock: 23,
-    isOnSale: true,
-    estimatedDelivery: "2-3 days",
-  },
-  {
-    id: 3,
-    name: "Premium Bluetooth Speaker",
-    price: 149.99,
-    originalPrice: null,
-    image: "/placeholder.svg?height=150&width=150",
-    quantity: 1,
-    color: "Space Gray",
-    size: null,
-    inStock: 5,
-    isOnSale: false,
-    estimatedDelivery: "5-7 days",
-  },
-]
-
-const mockSavedItems = [
-  {
-    id: 4,
-    name: "Gaming Headset RGB",
-    price: 129.99,
-    originalPrice: 179.99,
-    image: "/placeholder.svg?height=150&width=150",
-    inStock: true,
-  },
-  {
-    id: 5,
-    name: "Portable Mini Speaker",
-    price: 49.99,
-    originalPrice: 69.99,
-    image: "/placeholder.svg?height=150&width=150",
-    inStock: false,
-  },
-]
-
-const mockRecommendations = [
-  {
-    id: 6,
-    name: "Audio Cable Premium",
-    price: 29.99,
-    image: "/placeholder.svg?height=100&width=100",
-    rating: 4.5,
-  },
-  {
-    id: 7,
-    name: "Headphone Stand",
-    price: 39.99,
-    image: "/placeholder.svg?height=100&width=100",
-    rating: 4.3,
-  },
-]
+import { useCartStore } from "@/lib/cart-store"
+import {
+  ArrowLeft,
+  Minus,
+  Plus,
+  Trash2,
+  Heart,
+  ShoppingCart,
+  Truck,
+  Shield,
+  Tag,
+  Gift,
+  Clock,
+  Percent,
+  Loader2,
+} from "lucide-react"
+import { useState } from "react"
 
 export default function CartPage() {
   const router = useRouter()
-  const [cartItems, setCartItems] = useState(mockCartItems)
-  const [savedItems, setSavedItems] = useState(mockSavedItems)
+  const {
+    cartItems,
+    wishlistItems,
+    updateQuantity,
+    removeFromCart,
+    addToWishlist,
+    removeFromWishlist,
+    moveToCart,
+    getCartTotal,
+    getCartCount,
+  } = useCartStore()
+
   const [promoCode, setPromoCode] = useState("")
   const [promoApplied, setPromoApplied] = useState(false)
   const [giftWrap, setGiftWrap] = useState(false)
   const [expressShipping, setExpressShipping] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const updateQuantity = (id, newQuantity) => {
-    if (newQuantity === 0) {
-      removeItem(id)
-      return
-    }
-    setCartItems(cartItems.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item)))
-  }
-
-  const removeItem = (id) => {
-    setCartItems(cartItems.filter((item) => item.id !== id))
-  }
-
-  const moveToSaved = (id) => {
-    const item = cartItems.find((item) => item.id === id)
+  const moveToSaved = (productId: string) => {
+    const item = cartItems.find((item) => item.product_id === productId)
     if (item) {
-      setSavedItems([...savedItems, { ...item, quantity: undefined }])
-      removeItem(id)
+      addToWishlist(item)
+      removeFromCart(productId)
     }
   }
 
-  const moveToCart = (id) => {
-    const item = savedItems.find((item) => item.id === id)
-    if (item) {
-      setCartItems([...cartItems, { ...item, quantity: 1 }])
-      setSavedItems(savedItems.filter((item) => item.id !== id))
-    }
+  const handleProductClick = (productId: string) => {
+    router.push(`/product/${productId}`)
   }
 
   const applyPromoCode = () => {
-    if (promoCode.toUpperCase() === "SAVE10") {
-      setPromoApplied(true)
-      alert("Promo code applied! 10% discount added.")
-    } else if (promoCode.toUpperCase() === "SAVE20") {
-      setPromoApplied(true)
-      alert("Promo code applied! 20% discount added.");
-    } else if (promoCode.toUpperCase() === "FIRST50") {
-      setPromoApplied(true)
-      alert("Promo code applied! $50 discount added.");
-    } else {
-      alert("Invalid promo code")
-    }
+    setIsLoading(true)
+    // Simulate API call
+    setTimeout(() => {
+      if (promoCode.toUpperCase() === "SAVE10") {
+        setPromoApplied(true)
+        alert("Promo code applied! 10% discount added.")
+      } else if (promoCode.toUpperCase() === "SAVE20") {
+        setPromoApplied(true)
+        alert("Promo code applied! 20% discount added.")
+      } else if (promoCode.toUpperCase() === "FIRST50") {
+        setPromoApplied(true)
+        alert("Promo code applied! $50 discount added.")
+      } else {
+        alert("Invalid promo code")
+      }
+      setIsLoading(false)
+    }, 1000)
   }
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const savings = cartItems.reduce(
-    (sum, item) => sum + (item.originalPrice ? (item.originalPrice - item.price) * item.quantity : 0),
-    0,
-  )
+  const subtotal = getCartTotal()
+  const savings = cartItems.reduce((sum, item) => {
+    // Calculate savings if there was an original price (for demo, assume 20% savings)
+    return sum + item.extracted_price * item.quantity * 0.1
+  }, 0)
   const discount = promoApplied ? subtotal * 0.1 : 0
   const giftWrapFee = giftWrap ? 4.99 : 0
   const shippingFee = expressShipping ? 9.99 : subtotal > 100 ? 0 : 5.99
@@ -166,6 +103,10 @@ export default function CartPage() {
     router.push("/checkout")
   }
 
+  const formatPrice = (price: number) => {
+    return `$${price.toFixed(2)}`
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -176,11 +117,17 @@ export default function CartPage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-2xl font-bold">Shopping Cart</h1>
-            <Badge variant="secondary">{cartItems.length} items</Badge>
+            <Badge variant="secondary">{getCartCount()} items</Badge>
           </div>
-          <Button variant="outline" onClick={() => router.push("/")}>
-            Continue Shopping
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => router.push("/saved")}>
+              <Heart className="h-4 w-4 mr-2" />
+              Saved ({wishlistItems.length})
+            </Button>
+            <Button variant="outline" onClick={() => router.push("/")}>
+              Continue Shopping
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -191,7 +138,15 @@ export default function CartPage() {
             <ShoppingCart className="h-24 w-24 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-2xl font-bold mb-2">Your cart is empty</h2>
             <p className="text-muted-foreground mb-6">Add some items to get started</p>
-            <Button onClick={() => router.push("/")}>Start Shopping</Button>
+            <div className="flex gap-4 justify-center">
+              <Button onClick={() => router.push("/")}>Start Shopping</Button>
+              {wishlistItems.length > 0 && (
+                <Button variant="outline" onClick={() => router.push("/saved")}>
+                  <Heart className="h-4 w-4 mr-2" />
+                  View Saved Items ({wishlistItems.length})
+                </Button>
+              )}
+            </div>
           </div>
         ) : (
           <div className="grid lg:grid-cols-3 gap-8">
@@ -204,46 +159,44 @@ export default function CartPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {cartItems.map((item) => (
-                    <div key={item.id} className="border-b pb-6 last:border-b-0 last:pb-0">
+                    <div key={item.product_id} className="border-b pb-6 last:border-b-0 last:pb-0">
                       <div className="flex gap-4">
-                        <div className="w-32 h-32 relative rounded-lg overflow-hidden border">
-                          <Image src={item.image || "/placeholder.svg"} alt={item.name} fill className="object-cover" />
-                          {item.isOnSale && (
-                            <Badge variant="destructive" className="absolute top-2 left-2 text-xs">
-                              SALE
-                            </Badge>
-                          )}
+                        <div
+                          className="w-32 h-32 relative rounded-lg overflow-hidden border cursor-pointer"
+                          onClick={() => handleProductClick(item.product_id)}
+                        >
+                          <Image
+                            src={item.thumbnail || "/placeholder.svg"}
+                            alt={item.title}
+                            fill
+                            className="object-cover hover:scale-105 transition-transform duration-300"
+                          />
                         </div>
 
                         <div className="flex-1 space-y-3">
                           <div>
-                            <h3 className="font-semibold text-lg">{item.name}</h3>
+                            <h3
+                              className="font-semibold text-lg cursor-pointer hover:text-primary transition-colors"
+                              onClick={() => handleProductClick(item.product_id)}
+                            >
+                              {item.title}
+                            </h3>
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              {item.color && <span>Color: {item.color}</span>}
-                              {item.size && <span>Size: {item.size}</span>}
+                              {item.selectedVariants?.color && <span>Color: {item.selectedVariants.color}</span>}
+                              {item.selectedVariants?.size && <span>Size: {item.selectedVariants.size}</span>}
+                              <Badge variant="outline">{item.source}</Badge>
                             </div>
                           </div>
 
                           <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2">
-                              <span className="text-xl font-bold">${item.price}</span>
-                              {item.originalPrice && (
-                                <span className="text-sm text-muted-foreground line-through">
-                                  ${item.originalPrice}
-                                </span>
-                              )}
+                              <span className="text-xl font-bold">{formatPrice(item.extracted_price)}</span>
                             </div>
-                            {item.inStock < 10 && (
-                              <div className="flex items-center gap-1 text-orange-600">
-                                <AlertCircle className="h-4 w-4" />
-                                <span className="text-sm">Only {item.inStock} left</span>
-                              </div>
-                            )}
                           </div>
 
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Truck className="h-4 w-4" />
-                            <span>Estimated delivery: {item.estimatedDelivery}</span>
+                            <span>{item.delivery}</span>
                           </div>
 
                           <div className="flex items-center justify-between">
@@ -251,7 +204,7 @@ export default function CartPage() {
                               <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
                                 disabled={item.quantity <= 1}
                               >
                                 <Minus className="h-4 w-4" />
@@ -259,25 +212,25 @@ export default function CartPage() {
                               <Input
                                 type="number"
                                 value={item.quantity}
-                                onChange={(e) => updateQuantity(item.id, Number.parseInt(e.target.value) || 1)}
+                                onChange={(e) => updateQuantity(item.product_id, Number.parseInt(e.target.value) || 1)}
                                 className="w-16 text-center"
                                 min="1"
                               />
                               <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
                               >
                                 <Plus className="h-4 w-4" />
                               </Button>
                             </div>
 
                             <div className="flex items-center gap-2">
-                              <Button variant="ghost" size="sm" onClick={() => moveToSaved(item.id)}>
+                              <Button variant="ghost" size="sm" onClick={() => moveToSaved(item.product_id)}>
                                 <Heart className="h-4 w-4 mr-1" />
                                 Save for later
                               </Button>
-                              <Button variant="ghost" size="sm" onClick={() => removeItem(item.id)}>
+                              <Button variant="ghost" size="sm" onClick={() => removeFromCart(item.product_id)}>
                                 <Trash2 className="h-4 w-4 mr-1" />
                                 Remove
                               </Button>
@@ -290,33 +243,44 @@ export default function CartPage() {
                 </CardContent>
               </Card>
 
-              {/* Saved for Later */}
-              {savedItems.length > 0 && (
+              {/* Saved for Later Preview */}
+              {wishlistItems.length > 0 && (
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Saved for Later ({savedItems.length})</CardTitle>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Saved for Later ({wishlistItems.length})</CardTitle>
+                    <Button variant="outline" size="sm" onClick={() => router.push("/saved")}>
+                      View All
+                    </Button>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {savedItems.map((item) => (
-                        <div key={item.id} className="border rounded-lg p-4">
+                      {wishlistItems.slice(0, 4).map((item) => (
+                        <div key={item.product_id} className="border rounded-lg p-4">
                           <div className="flex gap-3">
-                            <div className="w-16 h-16 relative rounded-lg overflow-hidden">
+                            <div
+                              className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer"
+                              onClick={() => handleProductClick(item.product_id)}
+                            >
                               <Image
-                                src={item.image || "/placeholder.svg"}
-                                alt={item.name}
+                                src={item.thumbnail || "/placeholder.svg"}
+                                alt={item.title}
                                 fill
                                 className="object-cover"
                               />
                             </div>
                             <div className="flex-1">
-                              <h4 className="font-medium text-sm">{item.name}</h4>
-                              <p className="text-lg font-bold">${item.price}</p>
+                              <h4
+                                className="font-medium text-sm cursor-pointer hover:text-primary transition-colors"
+                                onClick={() => handleProductClick(item.product_id)}
+                              >
+                                {item.title}
+                              </h4>
+                              <p className="text-lg font-bold">{formatPrice(item.extracted_price)}</p>
                               <div className="flex gap-2 mt-2">
-                                <Button size="sm" onClick={() => moveToCart(item.id)} disabled={!item.inStock}>
+                                <Button size="sm" onClick={() => moveToCart(item.product_id)}>
                                   Move to Cart
                                 </Button>
-                                <Button variant="outline" size="sm">
+                                <Button variant="outline" size="sm" onClick={() => removeFromWishlist(item.product_id)}>
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
@@ -328,38 +292,6 @@ export default function CartPage() {
                   </CardContent>
                 </Card>
               )}
-
-              {/* Recommendations */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Frequently Bought Together</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {mockRecommendations.map((item) => (
-                      <div key={item.id} className="border rounded-lg p-4">
-                        <div className="flex gap-3">
-                          <div className="w-16 h-16 relative rounded-lg overflow-hidden">
-                            <Image
-                              src={item.image || "/placeholder.svg"}
-                              alt={item.name}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-medium text-sm">{item.name}</h4>
-                            <p className="text-lg font-bold">${item.price}</p>
-                            <Button size="sm" className="mt-2">
-                              Add to Cart
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
             </div>
 
             {/* Order Summary */}
@@ -385,11 +317,16 @@ export default function CartPage() {
                             <p className="text-xs text-muted-foreground">20% off up to $50</p>
                           </div>
                         </div>
-                        <Button size="sm" variant="outline" onClick={() => {
-                          setPromoCode("SAVE20")
-                          applyPromoCode()
-                        }}>
-                          Apply
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setPromoCode("SAVE20")
+                            applyPromoCode()
+                          }}
+                          disabled={isLoading}
+                        >
+                          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
                         </Button>
                       </div>
 
@@ -403,11 +340,16 @@ export default function CartPage() {
                             <p className="text-xs text-muted-foreground">$50 off on first order</p>
                           </div>
                         </div>
-                        <Button size="sm" variant="outline" onClick={() => {
-                          setPromoCode("FIRST50")
-                          applyPromoCode()
-                        }}>
-                          Apply
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setPromoCode("FIRST50")
+                            applyPromoCode()
+                          }}
+                          disabled={isLoading}
+                        >
+                          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
                         </Button>
                       </div>
                     </div>
@@ -419,11 +361,21 @@ export default function CartPage() {
                           placeholder="Enter coupon code"
                           value={promoCode}
                           onChange={(e) => setPromoCode(e.target.value)}
-                          disabled={promoApplied}
+                          disabled={promoApplied || isLoading}
                           className="flex-1"
                         />
-                        <Button variant="outline" onClick={applyPromoCode} disabled={promoApplied || !promoCode}>
-                          {promoApplied ? "Applied" : "Apply"}
+                        <Button
+                          variant="outline"
+                          onClick={applyPromoCode}
+                          disabled={promoApplied || !promoCode || isLoading}
+                        >
+                          {isLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : promoApplied ? (
+                            "Applied"
+                          ) : (
+                            "Apply"
+                          )}
                         </Button>
                       </div>
                       {promoApplied && (
@@ -471,39 +423,39 @@ export default function CartPage() {
                   {/* Price Breakdown */}
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span>Subtotal ({cartItems.length} items)</span>
-                      <span>${subtotal.toFixed(2)}</span>
+                      <span>Subtotal ({getCartCount()} items)</span>
+                      <span>{formatPrice(subtotal)}</span>
                     </div>
                     {savings > 0 && (
                       <div className="flex justify-between text-green-600">
                         <span>You saved</span>
-                        <span>-${savings.toFixed(2)}</span>
+                        <span>-{formatPrice(savings)}</span>
                       </div>
                     )}
                     {promoApplied && (
                       <div className="flex justify-between text-green-600">
                         <span>Promo discount</span>
-                        <span>-${discount.toFixed(2)}</span>
+                        <span>-{formatPrice(discount)}</span>
                       </div>
                     )}
                     {giftWrap && (
                       <div className="flex justify-between">
                         <span>Gift wrap</span>
-                        <span>${giftWrapFee.toFixed(2)}</span>
+                        <span>{formatPrice(giftWrapFee)}</span>
                       </div>
                     )}
                     <div className="flex justify-between">
                       <span>Shipping</span>
-                      <span>{shippingFee === 0 ? "Free" : `$${shippingFee.toFixed(2)}`}</span>
+                      <span>{shippingFee === 0 ? "Free" : formatPrice(shippingFee)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Tax</span>
-                      <span>${tax.toFixed(2)}</span>
+                      <span>{formatPrice(tax)}</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between font-bold text-lg">
                       <span>Total</span>
-                      <span>${total.toFixed(2)}</span>
+                      <span>{formatPrice(total)}</span>
                     </div>
                   </div>
 

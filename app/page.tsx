@@ -141,7 +141,12 @@ const handleAddToCart = async (product: any) => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold cursor-pointer" onClick={() => router.push("/")}>
-              AudioStore
+<img 
+  src="https://www.restoconnection.com/wp-content/uploads/connections-images/shopwave/logo_shopwave_black_logo.jpg" 
+  alt="" 
+  style={{ width: '100px', height: 'auto' }} 
+/>
+
             </h1>
             <div className="flex items-center gap-4">
               <Button variant="ghost" onClick={() => router.push("/offers")} className="text-orange-600 font-medium">

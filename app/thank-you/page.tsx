@@ -72,7 +72,14 @@ export default function ThankYouPage() {
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold">AudioStore</h1>
+            <h1 className="text-2xl font-bold cursor-pointer" onClick={() => router.push("/")}>
+<img 
+  src="https://www.restoconnection.com/wp-content/uploads/connections-images/shopwave/logo_shopwave_black_logo.jpg" 
+  alt="" 
+  style={{ width: '100px', height: 'auto' }} 
+/>
+
+            </h1>
         </div>
       </header>
 

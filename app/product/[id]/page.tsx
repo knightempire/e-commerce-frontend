@@ -211,9 +211,20 @@ const showCustomAlert = (message: string) => {
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.back()}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
+   <Button
+  variant="ghost"
+  size="icon"
+  onClick={() => {
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push('/');
+    }
+  }}
+>
+  <ArrowLeft className="h-5 w-5" />
+</Button>
+
             <h1 className="text-2xl font-bold">Product Details</h1>
           </div>
           <div className="flex items-center gap-4">

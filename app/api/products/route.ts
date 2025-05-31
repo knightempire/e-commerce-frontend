@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import axios from "axios"
 
-const API_KEY = process.env.API_KEY;
+const API_KEY = process.env.SERPAPI_KEY
 const BASE_URL = "https://serpapi.com/search.json"
 
 export interface Product {

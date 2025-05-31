@@ -90,7 +90,7 @@ const PasswordSettings: React.FC = () => {
           }).then((result) => {
             if (result.isConfirmed) {
               // Navigate or handle the success action here
-              router.push('/login');
+              router.push('/auth/login');
             }
           });
         } else {
@@ -104,7 +104,7 @@ const PasswordSettings: React.FC = () => {
           }).then((result) => {
             if (result.isConfirmed) {
               // Handle retry action
-              router.push('/login');
+              router.push('/auth/login');
             }
           });
         }
@@ -120,7 +120,7 @@ const PasswordSettings: React.FC = () => {
         }).then((result) => {
           if (result.isConfirmed) {
             // Handle retry action
-            router.push('/login');
+            router.push('/auth/login');
           }
         });
       }
@@ -193,7 +193,7 @@ const PasswordSettings: React.FC = () => {
         confirmButtonText: 'Retry',
       }).then(() => {
         // Navigate or handle error
-        router.push('/login');
+        router.push('/auth/login');
       });
     } else {
       const verifyToken = async () => {
@@ -220,7 +220,7 @@ const PasswordSettings: React.FC = () => {
               confirmButtonColor: primaryColor,
               confirmButtonText: 'Retry',
             }).then(() => {
-              router.push('/login');  // Redirect to /login if response is not OK
+              router.push('/auth/login');  // Redirect to /auth/login if response is not OK
             });
           } else {
             setUserName(data.user.name);
@@ -235,7 +235,7 @@ const PasswordSettings: React.FC = () => {
             allowOutsideClick: false,
             confirmButtonText: 'Retry',
           }).then(() => {
-            router.push('/login');  // Redirect to /login in case of error
+            router.push('/auth/login');  // Redirect to /auth/login in case of error
           });
         }
       };

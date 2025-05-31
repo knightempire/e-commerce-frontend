@@ -180,7 +180,7 @@ const LoginPage = () => {
         </form>
 
         <div className="mt-4 text-right">
-          <button onClick={() => router.push('/forgot-password')} className="text-sm" style={{ color: primaryColor }}>
+          <button onClick={() => router.push('/auth/forgotpassword')} className="text-sm" style={{ color: primaryColor }}>
             Forgot your password?
           </button>
         </div>
@@ -188,7 +188,7 @@ const LoginPage = () => {
         <div className="mt-6 text-center">
           <p className="text-sm">
             Don't have an account?{' '}
-            <button onClick={() => router.push('/SignupPage')} className="text-sm font-medium" style={{ color: primaryColor }}>
+            <button onClick={() => router.push('/auth/register')} className="text-sm font-medium" style={{ color: primaryColor }}>
               Sign up
             </button>
           </p>

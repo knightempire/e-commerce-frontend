@@ -71,7 +71,7 @@ const SignupPage: React.FC = () => {
         icon: 'success',
         confirmButtonText: 'OK',
       }).then(() => {
-        router.push('/login'); // Redirect to login after confirmation
+        router.push('/auth/login'); // Redirect to login after confirmation
       });
 
     } catch (error) {
@@ -144,7 +144,7 @@ const SignupPage: React.FC = () => {
 
         {/* Back to Login Link */}
         <div className="mt-4 text-center">
-          <button onClick={() => router.push('/login')} className="text-sm text-blue-500">
+          <button onClick={() => router.push('/auth/login')} className="text-sm text-blue-500">
             Back to Login
           </button>
         </div>

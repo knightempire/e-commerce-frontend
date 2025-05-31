@@ -53,7 +53,7 @@ const ForgotPassword: React.FC = () => {
                 icon: 'success',
                 confirmButtonText: 'OK',
             }).then(() => {
-                router.push('/login'); // Navigate to login after success
+                router.push('/auth/login'); // Navigate to login after success
             });
     
         } catch (error) {
@@ -64,7 +64,7 @@ const ForgotPassword: React.FC = () => {
                 icon: 'error',
                 confirmButtonText: 'OK',
             }).then(() => {
-                router.push('/login'); // Navigate to login even on error
+                router.push('/auth/login'); // Navigate to login even on error
             });
         }
     };
@@ -97,7 +97,7 @@ const ForgotPassword: React.FC = () => {
                     </button>
                 </form>
                 <div className="mt-4 text-center">
-                    <button onClick={() => router.push('/login')} className="text-sm text-blue-500">
+                    <button onClick={() => router.push('/auth/login')} className="text-sm text-blue-500">
                         Back to Login
                     </button>
                 </div>

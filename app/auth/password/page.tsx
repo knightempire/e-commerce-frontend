@@ -1,9 +1,7 @@
-// app/auth/password/page.tsx
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import Swal from 'sweetalert2';
 
 const PasswordSettings: React.FC = () => {
@@ -16,9 +14,10 @@ const PasswordSettings: React.FC = () => {
   const [Username, setUserId] = useState<string>('');
   const [UsernameValid, setUserIdValid] = useState<boolean>(false);
   const [UsernameMessage, setUserIdMessage] = useState<string>('');
-  
+
   const router = useRouter();
-  const { hash, query } = router.asPath;
+  const [hash, setHash] = useState<string | null>(null);
+  const [query, setQuery] = useState<Record<string, string | string[]>>({});
 
   const milkyWhite = "#f5f5f7";
   const primaryColor = "#6366f1"; 
@@ -48,7 +47,7 @@ const PasswordSettings: React.FC = () => {
     e.preventDefault();
     console.log('Form submitted');
 
-    const hashParams = new URLSearchParams(hash.replace('#', '?'));
+    const hashParams = new URLSearchParams(hash?.replace('#', '?') || '');  // Use optional chaining for hash
     const type = hashParams.get('type');
     const token = query.token as string;
 
@@ -179,6 +178,19 @@ const PasswordSettings: React.FC = () => {
   };
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const { hash, search } = window.location;
+      setHash(hash);
+      const params = new URLSearchParams(search);
+      setQuery(Object.fromEntries(params.entries()));
+    }
+  }, []);  // This runs only on the client side
+
+  useEffect(() => {
+    if (!hash || !query.token) {
+      return;
+    }
+
     const hashParams = new URLSearchParams(hash.replace('#', '?'));
     const type = hashParams.get('type');
     const token = query.token as string;
@@ -256,7 +268,7 @@ const PasswordSettings: React.FC = () => {
         </p>
 
         <form onSubmit={handleSubmit}>
-          {hash.includes('type=register') && (
+          {hash && hash.includes('type=register') && (
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2" style={{ color: darkColor }}>
                 Username
@@ -314,7 +326,7 @@ const PasswordSettings: React.FC = () => {
 
           <button
             type="submit"
-            disabled={loading || (hash.includes('type=register') && !UsernameValid)}
+            disabled={loading || (hash && hash.includes('type=register') && !UsernameValid)}
             className="w-full font-medium py-2 rounded-md text-white relative overflow-hidden group"
             style={{ background: gradientButton }}
           >

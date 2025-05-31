@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import Swal from 'sweetalert2';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation'; 
 
 const ForgotPassword: React.FC = () => {
     const [email, setEmail] = useState<string>('');

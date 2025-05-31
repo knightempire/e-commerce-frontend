@@ -1,4 +1,5 @@
 // pages/signup.tsx
+'use client';
 
 import React, { useState } from 'react';
 import Swal from 'sweetalert2';

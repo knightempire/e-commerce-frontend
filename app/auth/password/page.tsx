@@ -5,65 +5,59 @@ import { useRouter } from 'next/navigation';
 import Swal from 'sweetalert2';
 
 const PasswordSettings: React.FC = () => {
-  const [newPassword, setNewPassword] = useState<string>('');
-  const [confirmPassword, setConfirmPassword] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
-  const [passwordError, setPasswordError] = useState<string>('');
-  const [confirmPasswordError, setConfirmPasswordError] = useState<string>('');
-  const [userName, setUserName] = useState<string>('');
-  const [Username, setUserId] = useState<string>('');
-  const [UsernameValid, setUserIdValid] = useState<boolean>(false);
-  const [UsernameMessage, setUserIdMessage] = useState<string>('');
-
-  const router = useRouter();
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [userName, setUserName] = useState('');
   const [hash, setHash] = useState<string | null>(null);
   const [query, setQuery] = useState<Record<string, string | string[]>>({});
 
+  const router = useRouter();
+
   const milkyWhite = "#f5f5f7";
-  const primaryColor = "#6366f1"; 
-  const accentColor = "#ec4899"; 
-  const darkColor = "#1e293b"; 
+  const primaryColor = "#6366f1";
   const gradientButton = "linear-gradient(135deg, #ec4899 0%, #6366f1 100%)";
+  const darkColor = "#1e293b";
 
   const validatePasswords = () => {
     let valid = true;
     setPasswordError('');
     setConfirmPasswordError('');
-    
+
     if (newPassword.length < 6) {
       setPasswordError('Password must be at least 6 characters long');
       valid = false;
     }
-    
+
     if (newPassword !== confirmPassword) {
       setConfirmPasswordError('Passwords do not match');
       valid = false;
     }
-    
+
     return valid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted');
 
-    const hashParams = new URLSearchParams(hash?.replace('#', '?') || '');  // Use optional chaining for hash
+    const hashParams = new URLSearchParams(hash?.replace('#', '?') || '');
     const type = hashParams.get('type');
     const token = query.token as string;
 
-    if (validatePasswords() && (type !== 'register' || UsernameValid)) {
+    if (validatePasswords()) {
       setLoading(true);
 
       let endpoint = '';
       let body;
-      console.log("body", body);
+
       if (type === 'register') {
         endpoint = `${process.env.NEXT_PUBLIC_API_URL}/user/password`;
-        body = { username: Username, password: newPassword };
+        body = { password: newPassword };
       } else if (type === 'forgot') {
         endpoint = `${process.env.NEXT_PUBLIC_API_URL}/user/resetpassword`;
         body = { password: newPassword };
-        console.log("body", body);
       }
 
       try {
@@ -77,7 +71,7 @@ const PasswordSettings: React.FC = () => {
         });
 
         const data = await response.json();
-        console.log('Response data:', data);
+
         if (response.ok) {
           Swal.fire({
             title: 'Success!',
@@ -86,29 +80,11 @@ const PasswordSettings: React.FC = () => {
             confirmButtonColor: primaryColor,
             allowOutsideClick: false,
             confirmButtonText: 'Continue',
-          }).then((result) => {
-            if (result.isConfirmed) {
-              // Navigate or handle the success action here
-              router.push('/auth/login');
-            }
-          });
+          }).then(() => router.push('/auth/login'));
         } else {
-          Swal.fire({
-            title: 'Error',
-            text: 'Link has been expired or is invalid',
-            icon: 'error',
-            confirmButtonColor: primaryColor,
-            allowOutsideClick: false,
-            confirmButtonText: 'Retry',
-          }).then((result) => {
-            if (result.isConfirmed) {
-              // Handle retry action
-              router.push('/auth/login');
-            }
-          });
+          throw new Error(data.message || 'Link has expired or is invalid');
         }
       } catch (err) {
-        setLoading(false);
         Swal.fire({
           title: 'Error',
           text: 'Link has been expired or is invalid',
@@ -116,63 +92,18 @@ const PasswordSettings: React.FC = () => {
           confirmButtonColor: primaryColor,
           allowOutsideClick: false,
           confirmButtonText: 'Retry',
-        }).then((result) => {
-          if (result.isConfirmed) {
-            // Handle retry action
-            router.push('/auth/login');
-          }
-        });
+        }).then(() => router.push('/auth/login'));
+      } finally {
+        setLoading(false);
       }
     } else {
       Swal.fire({
         title: 'Error',
-        text: 'Please make sure your Username is valid and your passwords match.',
+        text: 'Please make sure your passwords match.',
         icon: 'error',
         confirmButtonColor: primaryColor,
         allowOutsideClick: false,
         confirmButtonText: 'Retry',
-      });
-    }
-  };
-
-  const handleUserIdBlur = async () => {
-    console.log('Username field lost focus');
-
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/check/username`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username: Username }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setUserIdValid(true); // Mark the Username as valid
-        setUserIdMessage('Username is available!'); // Success message
-        console.log('Username check success:', data);
-      } else {
-        setUserIdValid(false); // Mark the Username as invalid
-        setUserIdMessage('Username is already taken or invalid.'); // Error message
-        console.error('Username check failed:', data);
-        Swal.fire({
-          title: 'Error',
-          text: 'Username is already taken or invalid.',
-          icon: 'error',
-          confirmButtonColor: primaryColor,
-        });
-      }
-    } catch (error) {
-      setUserIdValid(false); // Mark the Username as invalid in case of an error
-      setUserIdMessage('An error occurred while checking the Username.'); // Error message
-      console.error('Error while checking Username:', error);
-      Swal.fire({
-        title: 'Error',
-        text: 'An error occurred while checking the Username.',
-        icon: 'error',
-        confirmButtonColor: primaryColor,
       });
     }
   };
@@ -184,12 +115,10 @@ const PasswordSettings: React.FC = () => {
       const params = new URLSearchParams(search);
       setQuery(Object.fromEntries(params.entries()));
     }
-  }, []);  // This runs only on the client side
+  }, []);
 
   useEffect(() => {
-    if (!hash || !query.token) {
-      return;
-    }
+    if (!hash || !query.token) return;
 
     const hashParams = new URLSearchParams(hash.replace('#', '?'));
     const type = hashParams.get('type');
@@ -201,12 +130,8 @@ const PasswordSettings: React.FC = () => {
         text: 'Invalid URL or link. Please try again.',
         icon: 'error',
         confirmButtonColor: primaryColor,
-        allowOutsideClick: false,
         confirmButtonText: 'Retry',
-      }).then(() => {
-        // Navigate or handle error
-        router.push('/auth/login');
-      });
+      }).then(() => router.push('/auth/login'));
     } else {
       const verifyToken = async () => {
         try {
@@ -223,32 +148,20 @@ const PasswordSettings: React.FC = () => {
           });
 
           const data = await response.json();
-          console.log('Token verification response:', data);
+
           if (!response.ok) {
-            Swal.fire({
-              title: 'Error',
-              text: data.message || 'Link has been expired or is invalid',
-              icon: 'error',
-              confirmButtonColor: primaryColor,
-              confirmButtonText: 'Retry',
-            }).then(() => {
-              router.push('/auth/login');  // Redirect to /auth/login if response is not OK
-            });
+            throw new Error(data.message);
           } else {
             setUserName(data.user.name);
           }
         } catch (error) {
-          console.error('Error verifying token:', error);
           Swal.fire({
             title: 'Error',
             text: 'An unexpected error occurred. Please try again.',
             icon: 'error',
             confirmButtonColor: primaryColor,
-            allowOutsideClick: false,
             confirmButtonText: 'Retry',
-          }).then(() => {
-            router.push('/auth/login');  // Redirect to /auth/login in case of error
-          });
+          }).then(() => router.push('/auth/login'));
         }
       };
 
@@ -258,7 +171,7 @@ const PasswordSettings: React.FC = () => {
 
   return (
     <div className="h-screen w-full flex items-center justify-center" style={{ background: milkyWhite }}>
-      <div className="w-full max-w-md p-8 rounded-xl shadow-lg" style={{ backgroundColor: 'white' }}>
+      <div className="w-full max-w-md p-8 rounded-xl shadow-lg bg-white">
         <h2 className="text-2xl font-bold text-center mb-6" style={{ color: darkColor }}>
           Set Your Password
         </h2>
@@ -268,28 +181,6 @@ const PasswordSettings: React.FC = () => {
         </p>
 
         <form onSubmit={handleSubmit}>
-          {hash && hash.includes('type=register') && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-2" style={{ color: darkColor }}>
-                Username
-              </label>
-              <input
-                type="text"
-                value={Username}
-                onChange={(e) => setUserId(e.target.value)}
-                onBlur={handleUserIdBlur}
-                className={`w-full px-3 py-2 border rounded-md`}
-                style={{ borderColor: `${darkColor}20` }}
-                placeholder="Enter your Username"
-              />
-              {UsernameMessage && (
-                <p className={`text-sm mt-2 ${UsernameValid ? 'text-green-500' : 'text-red-500'}`}>
-                  {UsernameMessage}
-                </p>
-              )}
-            </div>
-          )}
-
           <div className="mb-4">
             <label className="block text-sm font-medium mb-2" style={{ color: darkColor }}>
               New Password
@@ -326,7 +217,7 @@ const PasswordSettings: React.FC = () => {
 
           <button
             type="submit"
-            disabled={loading || (hash && hash.includes('type=register') && !UsernameValid)}
+            disabled={loading}
             className="w-full font-medium py-2 rounded-md text-white relative overflow-hidden group"
             style={{ background: gradientButton }}
           >

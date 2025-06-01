@@ -1,24 +1,51 @@
-# 🛒 E-Commerce Frontend
+# 🛒 E-Commerce Platform
 
-This is the frontend for an e-commerce web application built with **Next.js**. It integrates with the **Amazon API** to display products and includes various e-commerce features such as dynamic search, filtering, cart management, wishlist functionality, and checkout process.
+This is the **E-Commerce web application** built with **Next.js** for the frontend and **Node.js** with **MongoDB** for the backend. It features a variety of e-commerce functionalities like dynamic search, filtering, cart management, wishlist, and checkout, along with user authentication and order management.
+
+The frontend is hosted on **Vercel**, and the backend is hosted on **Google Cloud Platform (GCP)**. The backend also uses **Docker** for containerization.
 
 ---
 
 ## 🚀 Tech Stack
 
+### Frontend:
 - **Framework**: [Next.js](https://nextjs.org/)
 - **Language**: TypeScript
-- **Styling**: CSS / TailwindCSS (assumed from `globals.css`)
+- **Styling**: CSS / TailwindCSS
 - **State Management**: Custom hooks & context
 - **API Integration**: Amazon API (for fetching products)
 - **Authentication**: Google OAuth (via `googlelogin.tsx`)
-- **Storage**: LocalStorage (for wishlist management)
-- **Mailing**: Sends sample email notifications post-purchase
+- **UI Components**: [Shacdn](https://shacdn.com) (used in UI components)
+
+### Backend:
+- **Framework**: [Node.js](https://nodejs.org/)
+- **Database**: MongoDB Atlas
+- **Containerization**: Docker
+- **Hosting**: Google Cloud Platform (GCP)
+- **Authentication**: Pasteo with RSA keys (stronger than JWT)
+
 
 ---
 
+
+## 🧭 Navigation Overview
+
+| Path               | Description                    |
+|--------------------|--------------------------------|
+| `/`                | Home page (Displays all products with search and filter options) |
+| `/product/[id]`    | View individual product details |
+| `/cart`            | View and manage shopping cart |
+| `/saved`           | View and manage wishlist (local storage) |
+| `/checkout`        | Checkout page (with payment processing) |
+| `/thank-you`       | Order confirmation page |
+| `/profile`         | User profile page (optional) |
+
+---
+
+
 ## 📁 Project Structure
 
+### Frontend Structure:
 ```bash
 e-commerce frontend/
 │
@@ -62,30 +89,62 @@ e-commerce frontend/
 
 ```
 
----
 
-## 🧭 Navigation Overview
+### Backend Structure:
+```bash
+e-commerce backend/
+│
+├── config/ # Configuration files
+│ └── db.js # Database connection config
+│
+├── controllers/ # Request handlers for routes
+│ ├── google.login.js # Google login controller
+│ ├── login.contollers.js # User login logic
+│ ├── order.js # Order management
+│ └── user.js # User management
+│
+├── middleware/ # Middleware logic
+│ ├── auth/ # Authentication middleware
+│ ├── mail/ # Mailing logic
+│ ├── rsa/ # RSA encryption keys
+│ └── google.auth.js # Google OAuth middleware
+│
+├── routers/ # Route definitions
+│ └── user.js # User-related routes
+│
+├── .env # Environment variables
+├── docker-compose.yml # Docker configuration
+├── Dockerfile # Dockerfile for containerization
+├── app.js # Entry point for the app
+└── package.json # NPM dependencies and scripts
 
-| Path               | Description                    |
-|--------------------|--------------------------------|
-| `/`                | Home page (Displays all products with search and filter options) |
-| `/product/[id]`    | View individual product details |
-| `/cart`            | View and manage shopping cart |
-| `/saved`           | View and manage wishlist (local storage) |
-| `/checkout`        | Checkout page (with payment processing) |
-| `/thank-you`       | Order confirmation page |
-| `/profile`         | User profile page (optional) |
-
+```
 ---
 
 ## 🧪 Getting Started
 
+
+### Frontend Structure:
 ```bash
 # Install dependencies
-npm install
+npm install  --legacy-peer-deps
 
 # Run the dev server
 npm run dev
 
 # Build for production
 npm run build
+
+```
+
+
+### Frontend Structure:
+```bash
+# Install dependencies
+npm install
+
+# Run the server
+node app.js
+
+
+```

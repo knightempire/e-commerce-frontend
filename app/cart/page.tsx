@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { useCartStore } from "@/lib/cart-store"
 import {
   ArrowLeft,
   Minus,
@@ -25,27 +24,167 @@ import {
   Percent,
   Loader2,
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+
+type CartItem = {
+  product_id: string
+  title: string
+  thumbnail: string
+  extracted_price: number
+  quantity: number
+  delivery: string
+  source: string
+  selectedVariants?: {
+    color?: string
+    size?: string
+  }
+}
 
 export default function CartPage() {
   const router = useRouter()
-  const {
-    cartItems,
-    wishlistItems,
-    updateQuantity,
-    removeFromCart,
-    addToWishlist,
-    removeFromWishlist,
-    moveToCart,
-    getCartTotal,
-    getCartCount,
-  } = useCartStore()
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const [wishlistItems, setWishlistItems] = useState<CartItem[]>([]) // You can manage wishlist similarly if you want
+  const [isLoading, setIsLoading] = useState(true)
 
+  // Promo, gift, shipping states
   const [promoCode, setPromoCode] = useState("")
   const [promoApplied, setPromoApplied] = useState(false)
   const [giftWrap, setGiftWrap] = useState(false)
   const [expressShipping, setExpressShipping] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const [promoLoading, setPromoLoading] = useState(false)
+
+  // Fetch cart from API on mount
+  useEffect(() => {
+    const fetchCart = async () => {
+      const stored = localStorage.getItem("shopwave")
+      let token = ""
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        token = parsed.token
+      }
+      if (!token) {
+        setIsLoading(false)
+        return
+      }
+
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/viewcart`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) throw new Error("Failed to fetch cart")
+        const data = await res.json()
+        // Assuming your backend returns an array of cart items
+        setCartItems(data.cartItems || [])
+      } catch (error) {
+        console.error("Error fetching cart:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchCart()
+  }, [])
+const updateQuantity = async (productId: string, newQuantity: number) => {
+  if (newQuantity < 1) return;
+
+  // Find the product item in cartItems first
+  const productItem = cartItems.find(item => item.product_id === productId);
+  if (!productItem) return;
+
+  // Update local state first
+  setCartItems(items =>
+    items.map(item =>
+      item.product_id === productId ? { ...item, quantity: newQuantity } : item
+    )
+  );
+
+  console.log("Updating quantity for product:", productId, "to", newQuantity);
+
+  try {
+    const stored = localStorage.getItem('shopwave');
+    let token = '';
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      token = parsed.token;
+    }
+    if (!token) {
+      console.error('No auth token found');
+      return;
+    }
+
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/updatequantity`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`, // send token in header
+      },
+      body: JSON.stringify({
+        productId,
+        quantity: newQuantity,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error('Failed to update quantity on server');
+    }
+
+    const data = await res.json();
+    // Optionally sync local state with server returned cartItems
+    // setCartItems(data.cartItems);
+
+  } catch (error) {
+    console.error('Error updating quantity:', error);
+    // Optionally revert UI changes or show error message
+  }
+};
+
+
+
+const removeFromCart = async (productId: string) => {
+  const stored = localStorage.getItem("shopwave");
+  if (!stored) {
+    alert("You must be logged in to remove items.");
+    return;
+  }
+  const { token } = JSON.parse(stored);
+
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/removecart`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ productId }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      alert(errorData.message || "Failed to remove item from cart");
+      return;
+    }
+
+    const data = await res.json();
+    setCartItems(data.cartItems || []);
+  } catch (error) {
+    console.error("Error removing from cart:", error);
+    alert("An error occurred while removing the item.");
+  }
+};
+
+  // For demo, wishlist store logic can be added as needed
+  const addToWishlist = (item: CartItem) => {
+    setWishlistItems((prev) => [...prev, item])
+  }
+  const removeFromWishlist = (productId: string) => {
+    setWishlistItems((items) => items.filter((item) => item.product_id !== productId))
+  }
+  const moveToCart = (productId: string) => {
+    const item = wishlistItems.find((item) => item.product_id === productId)
+    if (item) {
+      setCartItems((prev) => [...prev, item])
+      removeFromWishlist(productId)
+    }
+  }
 
   const moveToSaved = (productId: string) => {
     const item = cartItems.find((item) => item.product_id === productId)
@@ -59,9 +198,9 @@ export default function CartPage() {
     router.push(`/product/${productId}`)
   }
 
+  // Promo code apply
   const applyPromoCode = () => {
-    setIsLoading(true)
-    // Simulate API call
+    setPromoLoading(true)
     setTimeout(() => {
       if (promoCode.toUpperCase() === "SAVE10") {
         setPromoApplied(true)
@@ -75,15 +214,21 @@ export default function CartPage() {
       } else {
         alert("Invalid promo code")
       }
-      setIsLoading(false)
+      setPromoLoading(false)
     }, 1000)
   }
 
+  const getCartTotal = () => {
+    return cartItems.reduce((total, item) => total + item.extracted_price * item.quantity, 0)
+  }
+
+  const getCartCount = () => {
+    return cartItems.reduce((count, item) => count + item.quantity, 0)
+  }
+
+  // Pricing calculations
   const subtotal = getCartTotal()
-  const savings = cartItems.reduce((sum, item) => {
-    // Calculate savings if there was an original price (for demo, assume 20% savings)
-    return sum + item.extracted_price * item.quantity * 0.1
-  }, 0)
+  const savings = cartItems.reduce((sum, item) => sum + item.extracted_price * item.quantity * 0.1, 0) // Demo 10% savings
   const discount = promoApplied ? subtotal * 0.1 : 0
   const giftWrapFee = giftWrap ? 4.99 : 0
   const shippingFee = expressShipping ? 9.99 : subtotal > 100 ? 0 : 5.99
@@ -106,6 +251,13 @@ export default function CartPage() {
   const formatPrice = (price: number) => {
     return `$${price.toFixed(2)}`
   }
+
+  if (isLoading)
+    return (
+      <div className="min-h-screen flex justify-center items-center">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    )
 
   return (
     <div className="min-h-screen bg-background">
@@ -214,7 +366,7 @@ export default function CartPage() {
                                 value={item.quantity}
                                 onChange={(e) => updateQuantity(item.product_id, Number.parseInt(e.target.value) || 1)}
                                 className="w-16 text-center"
-                                min="1"
+                                min={1}
                               />
                               <Button
                                 variant="outline"
@@ -252,228 +404,92 @@ export default function CartPage() {
                       View All
                     </Button>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {wishlistItems.slice(0, 4).map((item) => (
-                        <div key={item.product_id} className="border rounded-lg p-4">
-                          <div className="flex gap-3">
-                            <div
-                              className="w-16 h-16 relative rounded-lg overflow-hidden cursor-pointer"
-                              onClick={() => handleProductClick(item.product_id)}
-                            >
-                              <Image
-                                src={item.thumbnail || "/placeholder.svg"}
-                                alt={item.title}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <h4
-                                className="font-medium text-sm cursor-pointer hover:text-primary transition-colors"
-                                onClick={() => handleProductClick(item.product_id)}
-                              >
-                                {item.title}
-                              </h4>
-                              <p className="text-lg font-bold">{formatPrice(item.extracted_price)}</p>
-                              <div className="flex gap-2 mt-2">
-                                <Button size="sm" onClick={() => moveToCart(item.product_id)}>
-                                  Move to Cart
-                                </Button>
-                                <Button variant="outline" size="sm" onClick={() => removeFromWishlist(item.product_id)}>
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
+                  <CardContent className="space-y-6">
+                    {wishlistItems.slice(0, 3).map((item) => (
+                      <div key={item.product_id} className="flex gap-4 items-center">
+                        <div className="w-20 h-20 relative rounded-lg overflow-hidden border cursor-pointer" onClick={() => handleProductClick(item.product_id)}>
+                          <Image src={item.thumbnail || "/placeholder.svg"} alt={item.title} fill className="object-cover" />
                         </div>
-                      ))}
-                    </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold cursor-pointer" onClick={() => handleProductClick(item.product_id)}>
+                            {item.title}
+                          </h3>
+                          <Button size="sm" variant="outline" onClick={() => moveToCart(item.product_id)}>
+                            Move to Cart
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                   </CardContent>
                 </Card>
               )}
             </div>
 
-            {/* Order Summary */}
+            {/* Summary & Actions */}
             <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Order Summary</CardTitle>
+                  <CardTitle>Summary</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Enhanced Promo Code Section */}
-                  <div className="space-y-4">
-                    <Label className="text-base font-semibold">Available Offers</Label>
+                <CardContent>
+                  <div className="flex justify-between mb-2">
+                    <span>Subtotal</span>
+                    <span>{formatPrice(subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between mb-2 text-green-600">
+                    <span>You saved</span>
+                    <span>-{formatPrice(savings)}</span>
+                  </div>
+                  <div className="flex justify-between mb-2">
+                    <span>Discount</span>
+                    <span>-{formatPrice(discount)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between mt-2 mb-2">
+                    <span>Gift Wrap</span>
+                    <span>{giftWrap ? formatPrice(giftWrapFee) : "-"}</span>
+                  </div>
+                  <Checkbox checked={giftWrap} onCheckedChange={(checked) => setGiftWrap(!!checked)} id="giftwrap" />
+                  <Label htmlFor="giftwrap" className="ml-2">
+                    Add gift wrap ($4.99)
+                  </Label>
 
-                    {/* Quick Apply Coupons */}
-                    <div className="grid grid-cols-1 gap-2">
-                      <div className="border rounded-lg p-3 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-green-100 p-2 rounded">
-                            <Percent className="h-4 w-4 text-green-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm">SAVE20</p>
-                            <p className="text-xs text-muted-foreground">20% off up to $50</p>
-                          </div>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setPromoCode("SAVE20")
-                            applyPromoCode()
-                          }}
-                          disabled={isLoading}
-                        >
-                          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
-                        </Button>
-                      </div>
+                  <div className="flex justify-between mt-2 mb-2">
+                    <span>Shipping</span>
+                    <span>{shippingFee === 0 ? "Free" : formatPrice(shippingFee)}</span>
+                  </div>
+                  <Checkbox checked={expressShipping} onCheckedChange={(checked) => setExpressShipping(!!checked)} id="express" />
+                  <Label htmlFor="express" className="ml-2">
+                    Express Shipping ($9.99)
+                  </Label>
 
-                      <div className="border rounded-lg p-3 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-blue-100 p-2 rounded">
-                            <Gift className="h-4 w-4 text-blue-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm">FIRST50</p>
-                            <p className="text-xs text-muted-foreground">$50 off on first order</p>
-                          </div>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setPromoCode("FIRST50")
-                            applyPromoCode()
-                          }}
-                          disabled={isLoading}
-                        >
-                          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
-                        </Button>
-                      </div>
-                    </div>
+                  <Separator className="my-4" />
 
-                    {/* Manual Promo Code Entry */}
-                    <div className="border-t pt-4">
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Enter coupon code"
-                          value={promoCode}
-                          onChange={(e) => setPromoCode(e.target.value)}
-                          disabled={promoApplied || isLoading}
-                          className="flex-1"
-                        />
-                        <Button
-                          variant="outline"
-                          onClick={applyPromoCode}
-                          disabled={promoApplied || !promoCode || isLoading}
-                        >
-                          {isLoading ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : promoApplied ? (
-                            "Applied"
-                          ) : (
-                            "Apply"
-                          )}
-                        </Button>
-                      </div>
-                      {promoApplied && (
-                        <div className="flex items-center gap-2 text-green-600 mt-2">
-                          <Tag className="h-4 w-4" />
-                          <span className="text-sm">Coupon applied successfully!</span>
-                        </div>
-                      )}
-                    </div>
+                  <div className="flex justify-between font-bold text-lg mb-2">
+                    <span>Estimated Tax</span>
+                    <span>{formatPrice(tax)}</span>
+                  </div>
 
-                    <Button variant="ghost" className="w-full text-blue-600" onClick={() => router.push("/offers")}>
-                      View All Offers & Coupons
+                  <div className="flex justify-between font-bold text-xl mb-4">
+                    <span>Total</span>
+                    <span>{formatPrice(total)}</span>
+                  </div>
+
+                  <div className="flex gap-2 mb-4">
+                    <Input
+                      placeholder="Enter promo code"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value)}
+                      disabled={promoApplied}
+                    />
+                    <Button disabled={promoApplied || promoLoading} onClick={applyPromoCode}>
+                      {promoLoading ? <Loader2 className="animate-spin h-5 w-5" /> : "Apply"}
                     </Button>
                   </div>
 
-                  <Separator />
-
-                  {/* Additional Options */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Checkbox id="giftWrap" checked={giftWrap} onCheckedChange={setGiftWrap} />
-                        <Label htmlFor="giftWrap" className="flex items-center gap-2">
-                          <Gift className="h-4 w-4" />
-                          Gift wrap
-                        </Label>
-                      </div>
-                      <span className="text-sm">+$4.99</span>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Checkbox id="expressShipping" checked={expressShipping} onCheckedChange={setExpressShipping} />
-                        <Label htmlFor="expressShipping" className="flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          Express shipping
-                        </Label>
-                      </div>
-                      <span className="text-sm">+$9.99</span>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Price Breakdown */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Subtotal ({getCartCount()} items)</span>
-                      <span>{formatPrice(subtotal)}</span>
-                    </div>
-                    {savings > 0 && (
-                      <div className="flex justify-between text-green-600">
-                        <span>You saved</span>
-                        <span>-{formatPrice(savings)}</span>
-                      </div>
-                    )}
-                    {promoApplied && (
-                      <div className="flex justify-between text-green-600">
-                        <span>Promo discount</span>
-                        <span>-{formatPrice(discount)}</span>
-                      </div>
-                    )}
-                    {giftWrap && (
-                      <div className="flex justify-between">
-                        <span>Gift wrap</span>
-                        <span>{formatPrice(giftWrapFee)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span>Shipping</span>
-                      <span>{shippingFee === 0 ? "Free" : formatPrice(shippingFee)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Tax</span>
-                      <span>{formatPrice(tax)}</span>
-                    </div>
-                    <Separator />
-                    <div className="flex justify-between font-bold text-lg">
-                      <span>Total</span>
-                      <span>{formatPrice(total)}</span>
-                    </div>
-                  </div>
-
-                  <Button onClick={handleCheckout} className="w-full" size="lg">
+                  <Button className="w-full" onClick={handleCheckout}>
                     Proceed to Checkout
                   </Button>
-
-                  {/* Security Info */}
-                  <div className="bg-muted p-3 rounded-lg space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Shield className="h-4 w-4" />
-                      <span>Secure checkout with SSL encryption</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Truck className="h-4 w-4" />
-                      <span>Free shipping on orders over $100</span>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
             </div>

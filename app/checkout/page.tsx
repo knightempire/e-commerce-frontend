@@ -107,57 +107,148 @@ export default function CheckoutPage() {
     }
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    if (!validateForm()) {
-      return
-    }
+  if (!validateForm()) return;
 
-    setIsLoading(true)
-    setTransactionError("")
+  setIsLoading(true);
+  setTransactionError("");
 
-    // Simulate processing time
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+  try {
+    // Extract digits from card number for your check
+    const cardNumberDigits = formData.cardNumber.replace(/\D/g, "");
 
-    const cardNumberDigits = formData.cardNumber.replace(/\D/g, "")
-
-    let transactionResult = "error" // default to error
-
+    // Card check logic
+    let transactionResult = "error"; // default
     if (cardNumberDigits === "1") {
-      transactionResult = "approved"
+      transactionResult = "approved";
     } else if (cardNumberDigits === "2") {
-      transactionResult = "declined"
+      transactionResult = "declined";
     } else if (cardNumberDigits === "3") {
-      transactionResult = "error"
+      transactionResult = "error";
+    } else {
+      transactionResult = "approved";
     }
-    else{
-      transactionResult = "approved"
-    }
-
 
     if (transactionResult === "approved") {
-      const orderNumber = `ORD-${Date.now()}`
-      const finalOrderData = {
-        ...orderData,
-        orderNumber,
-        customerInfo: formData,
-        transactionStatus: "approved",
-        promoApplied,
-        paymentMethod,
-        orderDate: new Date().toISOString(),
+      // Build the payload for API
+      const payload = {
+        contact: {
+          fullName: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          newsletter: formData.newsletter,
+        },
+        shippingAddress: {
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+        },
+        payment: {
+          method: paymentMethod,
+          ...(paymentMethod === "card"
+            ? {
+                cardNumber: formData.cardNumber,
+                expiryDate: formData.expiryDate,
+                cvv: formData.cvv,
+                saveInfo: formData.saveInfo,
+              }
+            : {}),
+        },
+        order: {
+          isCartOrder: orderData.isCartOrder,
+          items: orderData.isCartOrder
+            ? orderData.items
+            : [
+                {
+                  ...orderData.product,
+                  quantity: orderData.quantity,
+                  selectedVariants: orderData.selectedVariants,
+                },
+              ],
+          promoCode,
+          subtotal,
+          discount,
+          shipping,
+          tax,
+          total,
+        },
+      };
+
+      // Get auth token
+      const stored = localStorage.getItem("shopwave");
+      let token = "";
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        token = parsed.token;
+      }
+      if (!token) {
+        throw new Error("No auth token found");
       }
 
-      localStorage.setItem("finalOrder", JSON.stringify(finalOrderData))
-      router.push("/thank-you")
-    } else if (transactionResult === "declined") {
-      setTransactionError("Transaction declined. Please check your payment information and try again.")
-    } else {
-      setTransactionError("Payment gateway errors. Please try again later.")
-    }
+      // Call your API
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/createorder`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
 
-    setIsLoading(false)
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || "Failed to create order");
+
+      // Build final order data to store locally
+      // Map payload.contact -> customerInfo, payload.shippingAddress -> customerInfo address fields
+      const finalOrderData = {
+        orderNumber: data.order?.orderNumber || `ORD-${Date.now()}`,
+        orderDate: new Date().toISOString(),
+        paymentMethod: payload.payment.method,
+        promoApplied: promoCode ? true : false,
+        subtotal,
+        discount,
+        shipping,
+        tax,
+        total,
+        isCartOrder: payload.order.isCartOrder,
+        items: payload.order.items,
+        product: !payload.order.isCartOrder ? payload.order.items[0] : undefined,
+        quantity: !payload.order.isCartOrder ? payload.order.items[0]?.quantity : undefined,
+        selectedVariants: !payload.order.isCartOrder ? payload.order.items[0]?.selectedVariants : undefined,
+        customerInfo: {
+          fullName: payload.contact.fullName,
+          email: payload.contact.email,
+          phone: payload.contact.phone,
+          address: payload.shippingAddress.address,
+          city: payload.shippingAddress.city,
+          state: payload.shippingAddress.state,
+          zipCode: payload.shippingAddress.zipCode,
+        },
+      };
+
+      // Save to localStorage
+      localStorage.setItem("finalOrder", JSON.stringify(finalOrderData));
+
+      // Redirect to thank-you page
+      router.push("/thank-you");
+    } else if (transactionResult === "declined") {
+      setTransactionError(
+        "Transaction declined. Please check your payment information and try again."
+      );
+    } else {
+      setTransactionError("Payment gateway errors. Please try again later.");
+    }
+  } catch (err: any) {
+    setTransactionError(err.message);
+  } finally {
+    setIsLoading(false);
   }
+};
+
 
   if (!orderData) {
     return <div>Loading...</div>

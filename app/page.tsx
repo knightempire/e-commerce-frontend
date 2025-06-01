@@ -1,6 +1,6 @@
 "use client"
 
-import { useState,useEffect } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
@@ -38,8 +38,8 @@ export default function HomePage() {
   const [viewMode, setViewMode] = useState("grid")
   const [showFilters, setShowFilters] = useState(false)
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({})
-const [showAlert, setShowAlert] = useState(false)
-const [alertMessage, setAlertMessage] = useState("")
+  const [showAlert, setShowAlert] = useState(false)
+  const [alertMessage, setAlertMessage] = useState("")
 
   const { addToCart, addToWishlist, removeFromWishlist, isInWishlist, getCartCount } = useCartStore()
 
@@ -57,13 +57,11 @@ const [alertMessage, setAlertMessage] = useState("")
     threshold: 200,
   })
 
-  // Fix: use num: PAGE_SIZE for search to fetch 40 products
   const handleSearch = (query: string) => {
     setSearchQuery(query)
     search({ q: query || "electronics", num: PAGE_SIZE })
   }
 
-  // Fix: pass num: PAGE_SIZE for filters search
   const handleFiltersChange = (filters: SearchParams) => {
     search({
       ...filters,
@@ -91,27 +89,68 @@ const [alertMessage, setAlertMessage] = useState("")
     router.push(`/product/${productId}`)
   }
 
-const showCustomAlert = (message: string) => {
-  setAlertMessage(message)
-  setShowAlert(true)
+  const showCustomAlert = (message: string) => {
+    setAlertMessage(message)
+    setShowAlert(true)
 
-  // Hide the alert after 3 seconds
-  setTimeout(() => {
-    setShowAlert(false)
-  }, 3000)
-}
+    // Hide the alert after 3 seconds
+    setTimeout(() => {
+      setShowAlert(false)
+    }, 3000)
+  }
 
-const handleAddToCart = async (product: any) => {
-  const productId = product.product_id
-  setLoadingStates((prev) => ({ ...prev, [`cart-${productId}`]: true }))
+  const handleAddToCart = async (product: any) => {
+    const productId = product.product_id;
+    setLoadingStates((prev) => ({ ...prev, [`cart-${productId}`]: true }));
 
-  await new Promise((resolve) => setTimeout(resolve, 500))
+    // Prepare the product details to send to the API
+    const productDetails = {
+      productItem: {
+        ...product,
+        stateFlag: 0, // Set stateFlag to 0 for cart
+      },
+    };
 
-  addToCart(product, 1)
-  showCustomAlert("Added to cart!")  // Use the new custom alert function
 
-  setLoadingStates((prev) => ({ ...prev, [`cart-${productId}`]: false }))
-}
+      const stored = localStorage.getItem('shopwave');
+      let token = '';
+    if (stored) {
+    const parsed = JSON.parse(stored); // parsed is an object like { token: "..." }
+      token = parsed.token;
+    }
+
+    console.log("Token retrieved from local storage:", token);
+
+    if (!token) {
+      console.error("No token found in local storage");
+      showCustomAlert("Please log in to add items to your cart.");
+      setLoadingStates((prev) => ({ ...prev, [`cart-${productId}`]: false }));
+      return;
+    }
+    console.log("Token found:", token);
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/addcart`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // Send the token in the Authorization header
+        },
+        body: JSON.stringify(productDetails),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        showCustomAlert("Added to cart!"); // Show success alert
+      } else {
+        const errorData = await response.json();
+        console.error('Error adding to cart:', errorData.message);
+      }
+    } catch (error) {
+      console.error('Network error:', error);
+    }
+
+    setLoadingStates((prev) => ({ ...prev, [`cart-${productId}`]: false }));
+  }
 
   const formatPrice = (price: string) => {
     const match = price.match(/[\d,]+\.?\d*/g)
@@ -121,12 +160,10 @@ const handleAddToCart = async (product: any) => {
     return price
   }
 
-  // Filter unique products with price > 0
   const uniqueProducts = Array.from(
     new Map(
       products
         .filter((product) => {
-          // Extract numeric price for comparison; fallback to 0 if unavailable or unparsable
           const numericPrice = parseFloat(product.price.replace(/[^0-9\.]+/g, "")) || 0
           return numericPrice > 0
         })
@@ -142,63 +179,62 @@ const handleAddToCart = async (product: any) => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-   <header className="border-b bg-white sticky top-0 z-50">
-  <div className="container mx-auto px-4 py-4">
-    <div className="flex items-center justify-between">
-      <h1 className="text-2xl font-bold cursor-pointer" onClick={() => router.push("/")}>
-        <img 
-          src="https://www.restoconnection.com/wp-content/uploads/connections-images/shopwave/logo_shopwave_black_logo.jpg" 
-          alt="ShopWave Logo" 
-          style={{ width: '100px', height: 'auto' }} 
-        />
-      </h1>
+      <header className="border-b bg-white sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold cursor-pointer" onClick={() => router.push("/")}>
+              <img 
+                src="https://www.restoconnection.com/wp-content/uploads/connections-images/shopwave/logo_shopwave_black_logo.jpg" 
+                alt="ShopWave Logo" 
+                style={{ width: '100px', height: 'auto' }} 
+              />
+            </h1>
 
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={() => router.push("/offers")} className="text-orange-600 font-medium">
-          🔥 Offers
-        </Button>
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" onClick={() => router.push("/offers")} className="text-orange-600 font-medium">
+                🔥 Offers
+              </Button>
 
-        <Button variant="ghost" size="icon" onClick={() => router.push("/profile")}>
-          <User className="h-5 w-5" />
-        </Button>
+              <Button variant="ghost" size="icon" onClick={() => router.push("/profile")}>
+                <User   className="h-5 w-5" />
+              </Button>
 
-        <Button variant="ghost" size="icon" className="relative" onClick={() => router.push("/saved")}>
-          <Heart className="h-5 w-5" />
-          {useCartStore.getState().wishlistItems.length > 0 && (
-            <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 text-xs">
-              {useCartStore.getState().wishlistItems.length}
-            </Badge>
-          )}
-        </Button>
+              <Button variant="ghost" size="icon" className="relative" onClick={() => router.push("/saved")}>
+                <Heart className="h-5 w-5" />
+                {useCartStore.getState().wishlistItems.length > 0 && (
+                  <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 text-xs">
+                    {useCartStore.getState().wishlistItems.length}
+                  </Badge>
+                )}
+              </Button>
 
-        <Button variant="ghost" size="icon" className="relative" onClick={() => router.push("/cart")}>
-          <ShoppingCart className="h-5 w-5" />
-          {getCartCount() > 0 && (
-            <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 text-xs">
-              {getCartCount()}
-            </Badge>
-          )}
-        </Button>
+              <Button variant="ghost" size="icon" className="relative" onClick={() => router.push("/cart")}>
+                <ShoppingCart className="h-5 w-5" />
+                {getCartCount() > 0 && (
+                  <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 text-xs">
+                    {getCartCount()}
+                  </Badge>
+                )}
+              </Button>
 
-        {/* 🚪 Logout Button */}
-        <Button variant="outline" onClick={handleLogout} className="text-red-600 border-red-600 hover:bg-red-50">
-          Logout
-        </Button>
-      </div>
-    </div>
-  </div>
-</header>
-
+              {/* 🚪 Logout Button */}
+              <Button variant="outline" onClick={handleLogout} className="text-red-600 border-red-600 hover:bg-red-50">
+                Logout
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
 
       <OfferBanner />
-    {showAlert && (
-      <div className="fixed bottom-4 right-4 z-50">
-        <Alert className="bg-green-500 text-white">
-          <Info className="h-4 w-4" />
-          <AlertDescription>{alertMessage}</AlertDescription>
-        </Alert>
-      </div>
-    )}
+      {showAlert && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <Alert className="bg-green-500 text-white">
+            <Info className="h-4 w-4" />
+            <AlertDescription>{alertMessage}</AlertDescription>
+          </Alert>
+        </div>
+      )}
       
       <div className="container mx-auto px-4 py-8">
         {/* Search and Controls */}
@@ -408,6 +444,7 @@ const handleAddToCart = async (product: any) => {
                   </CardContent>
                 </Card>
               ))}
+
 
               {/* Loading Skeletons */}
               {loading && (

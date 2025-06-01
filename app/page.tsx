@@ -40,8 +40,38 @@ export default function HomePage() {
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({})
   const [showAlert, setShowAlert] = useState(false)
   const [alertMessage, setAlertMessage] = useState("")
+const [cartCount, setCartCount] = useState(0);
 
   const { addToCart, addToWishlist, removeFromWishlist, isInWishlist, getCartCount } = useCartStore()
+
+useEffect(() => {
+  fetchCartCount().then(setCartCount);
+}, []);
+
+
+  const fetchCartCount = async () => {
+  const stored = localStorage.getItem('shopwave');
+  let token = '';
+  if (stored) {
+    const parsed = JSON.parse(stored);
+    token = parsed.token;
+  }
+  if (!token) return 0;
+
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/viewcart`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Failed to fetch cart');
+    const data = await res.json();
+    // Assuming data.cartItems is the array of cart items
+    return data.cartItems.reduce((acc, item) => acc + (item.quantity || 0), 0);
+  } catch (error) {
+    console.error(error);
+    return 0;
+  }
+};
+
 
   // Pass num: PAGE_SIZE to load 40 products per page
   const { products, loading, error, hasMore, loadMore, search, refresh, totalResults } = useProducts({
@@ -99,58 +129,56 @@ export default function HomePage() {
     }, 3000)
   }
 
-  const handleAddToCart = async (product: any) => {
-    const productId = product.product_id;
-    setLoadingStates((prev) => ({ ...prev, [`cart-${productId}`]: true }));
+const handleAddToCart = async (product: any) => {
+  const productId = product.product_id;
+  setLoadingStates((prev) => ({ ...prev, [`cart-${productId}`]: true }));
 
-    // Prepare the product details to send to the API
-    const productDetails = {
-      productItem: {
-        ...product,
-        stateFlag: 0, // Set stateFlag to 0 for cart
-      },
-    };
+  const productDetails = {
+    productItem: {
+      ...product,
+      stateFlag: 0, // Set stateFlag to 0 for cart
+    },
+  };
 
-
-      const stored = localStorage.getItem('shopwave');
-      let token = '';
-    if (stored) {
-    const parsed = JSON.parse(stored); // parsed is an object like { token: "..." }
-      token = parsed.token;
-    }
-
-    console.log("Token retrieved from local storage:", token);
-
-    if (!token) {
-      console.error("No token found in local storage");
-      showCustomAlert("Please log in to add items to your cart.");
-      setLoadingStates((prev) => ({ ...prev, [`cart-${productId}`]: false }));
-      return;
-    }
-    console.log("Token found:", token);
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/addcart`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`, // Send the token in the Authorization header
-        },
-        body: JSON.stringify(productDetails),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        showCustomAlert("Added to cart!"); // Show success alert
-      } else {
-        const errorData = await response.json();
-        console.error('Error adding to cart:', errorData.message);
-      }
-    } catch (error) {
-      console.error('Network error:', error);
-    }
-
-    setLoadingStates((prev) => ({ ...prev, [`cart-${productId}`]: false }));
+  const stored = localStorage.getItem('shopwave');
+  let token = '';
+  if (stored) {
+    const parsed = JSON.parse(stored);
+    token = parsed.token;
   }
+
+  if (!token) {
+    showCustomAlert("Please log in to add items to your cart.");
+    setLoadingStates((prev) => ({ ...prev, [`cart-${productId}`]: false }));
+    return;
+  }
+
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/addcart`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(productDetails),
+    });
+
+    if (response.ok) {
+      showCustomAlert("Added to cart!");
+      // After successfully adding, fetch the updated count
+      const updatedCount = await fetchCartCount();
+      setCartCount(updatedCount);
+    } else {
+      const errorData = await response.json();
+      console.error('Error adding to cart:', errorData.message);
+    }
+  } catch (error) {
+    console.error('Network error:', error);
+  }
+
+  setLoadingStates((prev) => ({ ...prev, [`cart-${productId}`]: false }));
+};
+
 
   const formatPrice = (price: string) => {
     const match = price.match(/[\d,]+\.?\d*/g)
@@ -212,7 +240,7 @@ export default function HomePage() {
                 <ShoppingCart className="h-5 w-5" />
                 {getCartCount() > 0 && (
                   <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 text-xs">
-                    {getCartCount()}
+                     {cartCount}
                   </Badge>
                 )}
               </Button>

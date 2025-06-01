@@ -28,6 +28,7 @@ The frontend is hosted on **Vercel**, and the backend is hosted on **Google Clou
 ---
 
 
+
 ## 🧭 Navigation Overview
 
 | Path               | Description                    |
@@ -41,6 +42,33 @@ The frontend is hosted on **Vercel**, and the backend is hosted on **Google Clou
 | `/profile`         | User profile page (optional) |
 
 ---
+
+## 🛒 Features
+
+### Home Page
+- Displays all products using the Amazon API.
+- Includes a dynamic search bar and product filters (e.g., by category, price).
+
+### Product Page
+- Displays detailed information for a specific product, including images, description, and pricing.
+
+### Cart Page
+- Allows users to add/remove items from the cart.
+- Cart state is connected to the backend and is persistent across sessions.
+
+### Wishlist
+- Users can add items to their wishlist.
+- Wishlist is stored in **localStorage** and is not connected to the backend.
+
+### Checkout Page
+- Users can review items in their cart and proceed with payment.
+- If the card number is **2**, the transaction will be **declined**.
+- If the card number is **3**, the transaction will **fail**.
+- Any other card number will be processed as **successful**.
+- Upon success or failure, users will receive an email notification with the order status.
+
+### Thank You Page
+- After a successful transaction, users will be redirected to a thank-you page with an order confirmation.
 
 
 ## 📁 Project Structure
@@ -148,3 +176,11 @@ node app.js
 
 
 ```
+
+## 🌐 Links
+
+Frontend Repository: https://github.com/knightempire/e-commerce-frontend
+
+Backend Repository:  https://github.com/knightempire/e-commerce-backend
+
+Live Site: https://e-commerce-sooty-eight-86.vercel.app/auth/login

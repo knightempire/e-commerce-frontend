@@ -65,7 +65,7 @@ const LoginPage = () => {
       if (role === 'admin') {
         router.push('/admin');
       } else {
-        router.push('/feed');
+        router.push('/');
       }
     } catch (error) {
       console.error('Token verification error:', error);
@@ -104,7 +104,7 @@ const LoginPage = () => {
       if (res.ok) {
         const base64Name = btoa(data.user.name);
         localStorage.setItem('linkendin', JSON.stringify({ token: data.token, name: base64Name }));
-        router.push('/feed');
+        router.push('/');
       } else {
         setPasswordError(data.message || 'Login failed. Please try again.');
       }
@@ -119,7 +119,7 @@ const LoginPage = () => {
   return (
     <div className="h-screen w-full flex items-center justify-center" style={{ background: milkyWhite }}>
       <div className="w-full max-w-md p-8 rounded-xl shadow-lg" style={{ backgroundColor: 'white' }}>
-        <div className="flex justify-center mb-6 cursor-pointer" onClick={() => router.push('/feed')}>
+        <div className="flex justify-center mb-6 cursor-pointer" onClick={() => router.push('/')}>
 <img 
   src="https://www.restoconnection.com/wp-content/uploads/connections-images/shopwave/logo_shopwave_black_logo.jpg" 
   alt="" 

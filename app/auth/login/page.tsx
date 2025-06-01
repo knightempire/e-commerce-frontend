@@ -26,12 +26,12 @@ const LoginPage = () => {
     const tokenFromUrl = searchParams.get('token');
 
     if (tokenFromUrl) {
-      localStorage.setItem('linkendin', JSON.stringify({ token: tokenFromUrl }));
+      localStorage.setItem('shopwave', JSON.stringify({ token: tokenFromUrl }));
       console.log('Google token saved to localStorage:', tokenFromUrl);
       verifyToken(tokenFromUrl);
     }
 
-    const stored = localStorage.getItem('linkendin');
+    const stored = localStorage.getItem('shopwave');
     if (stored) {
       const { token } = JSON.parse(stored);
       if (token) verifyToken(token);
@@ -50,7 +50,7 @@ const LoginPage = () => {
 
       if (!res.ok) {
         console.log('Token verification failed');
-        localStorage.removeItem('linkendin');
+        localStorage.removeItem('shopwave');
         return;
       }
 
@@ -58,7 +58,7 @@ const LoginPage = () => {
       const { role, name } = data.user;
 
       localStorage.setItem(
-        'linkendin',
+        'shopwave',
         JSON.stringify({ token, role, name: btoa(name) })
       );
 
@@ -103,7 +103,7 @@ const LoginPage = () => {
 
       if (res.ok) {
         const base64Name = btoa(data.user.name);
-        localStorage.setItem('linkendin', JSON.stringify({ token: data.token, name: base64Name }));
+        localStorage.setItem('shopwave', JSON.stringify({ token: data.token, name: base64Name }));
         router.push('/');
       } else {
         setPasswordError(data.message || 'Login failed. Please try again.');

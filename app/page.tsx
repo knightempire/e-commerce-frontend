@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState,useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
@@ -134,45 +134,61 @@ const handleAddToCart = async (product: any) => {
     ).values()
   )
 
+  const handleLogout = () => {
+    localStorage.removeItem("shopwave")
+    router.push("/auth/login")
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-white sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold cursor-pointer" onClick={() => router.push("/")}>
-<img 
-  src="https://www.restoconnection.com/wp-content/uploads/connections-images/shopwave/logo_shopwave_black_logo.jpg" 
-  alt="" 
-  style={{ width: '100px', height: 'auto' }} 
-/>
+   <header className="border-b bg-white sticky top-0 z-50">
+  <div className="container mx-auto px-4 py-4">
+    <div className="flex items-center justify-between">
+      <h1 className="text-2xl font-bold cursor-pointer" onClick={() => router.push("/")}>
+        <img 
+          src="https://www.restoconnection.com/wp-content/uploads/connections-images/shopwave/logo_shopwave_black_logo.jpg" 
+          alt="ShopWave Logo" 
+          style={{ width: '100px', height: 'auto' }} 
+        />
+      </h1>
 
-            </h1>
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" onClick={() => router.push("/offers")} className="text-orange-600 font-medium">
-                🔥 Offers
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => router.push("/profile")}>
-                <User className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="relative" onClick={() => router.push("/saved")}>
-                <Heart className="h-5 w-5" />
-                {useCartStore.getState().wishlistItems.length > 0 && (
-                  <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 text-xs">
-                    {useCartStore.getState().wishlistItems.length}
-                  </Badge>
-                )}
-              </Button>
-              <Button variant="ghost" size="icon" className="relative" onClick={() => router.push("/cart")}>
-                <ShoppingCart className="h-5 w-5" />
-                {getCartCount() > 0 && (
-                  <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 text-xs">{getCartCount()}</Badge>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" onClick={() => router.push("/offers")} className="text-orange-600 font-medium">
+          🔥 Offers
+        </Button>
+
+        <Button variant="ghost" size="icon" onClick={() => router.push("/profile")}>
+          <User className="h-5 w-5" />
+        </Button>
+
+        <Button variant="ghost" size="icon" className="relative" onClick={() => router.push("/saved")}>
+          <Heart className="h-5 w-5" />
+          {useCartStore.getState().wishlistItems.length > 0 && (
+            <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 text-xs">
+              {useCartStore.getState().wishlistItems.length}
+            </Badge>
+          )}
+        </Button>
+
+        <Button variant="ghost" size="icon" className="relative" onClick={() => router.push("/cart")}>
+          <ShoppingCart className="h-5 w-5" />
+          {getCartCount() > 0 && (
+            <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 text-xs">
+              {getCartCount()}
+            </Badge>
+          )}
+        </Button>
+
+        {/* 🚪 Logout Button */}
+        <Button variant="outline" onClick={handleLogout} className="text-red-600 border-red-600 hover:bg-red-50">
+          Logout
+        </Button>
+      </div>
+    </div>
+  </div>
+</header>
+
 
       <OfferBanner />
     {showAlert && (

@@ -75,17 +75,37 @@ const [alertMessage, setAlertMessage] = useState("")
     }
   }, [productId])
 
-  const handleBuyNow = () => {
-    // Always use our checkout page instead of external links
-    const orderData = {
-      product,
-      selectedVariants: { color: "default", size: "standard" },
-      quantity,
-      subtotal: product?.extracted_price * quantity || 0,
+const handleBuyNow = () => {
+  const stored = localStorage.getItem('shopwave');
+  let token = '';
+
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      token = parsed.token;
+    } catch (e) {
+      console.error("Invalid token format", e);
     }
-    localStorage.setItem("orderData", JSON.stringify(orderData))
-    router.push("/checkout")
   }
+
+  if (!token) {
+    showCustomAlert("Please log in to proceed.");
+    return;
+  }
+
+  if (!product) return;
+
+  const orderData = {
+    product,
+    selectedVariants: { color: "default", size: "standard" },
+    quantity,
+    subtotal: product.extracted_price * quantity || 0,
+  };
+
+  localStorage.setItem("orderData", JSON.stringify(orderData));
+  router.push("/checkout");
+};
+
 
   // Function to show the alert
 const showCustomAlert = (message: string) => {
@@ -99,13 +119,57 @@ const showCustomAlert = (message: string) => {
 }
 
 
-  const handleAddToCart = async  () => {
-    if (product) {
-        await new Promise((resolve) => setTimeout(resolve, 500))
-      addToCart(product, quantity)
-  showCustomAlert("Added to cart!") 
+const handleAddToCart = async () => {
+  if (!product) return;
+
+  const productDetails = {
+    productItem: {
+      ...product,
+      stateFlag: 0, // 0 for cart
+    },
+  };
+
+  const stored = localStorage.getItem('shopwave');
+  let token = '';
+
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      token = parsed.token;
+    } catch (e) {
+      console.error("Invalid token format", e);
     }
   }
+
+  if (!token) {
+    showCustomAlert("Please log in to add items to your cart.");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/addcart`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(productDetails),
+    });
+
+    if (response.ok) {
+      showCustomAlert("Added to cart!");
+      addToCart(product, quantity); // Local cart store
+    } else {
+      const errorData = await response.json();
+      console.error("Failed to add to cart:", errorData);
+      showCustomAlert("Failed to add to cart.");
+    }
+  } catch (error) {
+    console.error("Error adding to cart:", error);
+    showCustomAlert("Something went wrong. Please try again.");
+  }
+};
+
 
   const handleWishlistToggle = () => {
     if (product) {

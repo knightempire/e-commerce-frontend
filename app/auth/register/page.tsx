@@ -93,11 +93,11 @@ const SignupPage: React.FC = () => {
         
         {/* Image Section */}
         <div className="flex justify-center mb-6">
-          <img 
-            src="https://images.ctfassets.net/tyqyfq36jzv2/4LDyHu4fEajllYmI8y5bj7/124bcfb1b6a522326d7d90ac1e3debc8/Linkedin-logo-png.png" 
-            alt="Company Logo" 
-            className="h-12 cursor-pointer" 
-          />
+<img 
+  src="https://www.restoconnection.com/wp-content/uploads/connections-images/shopwave/logo_shopwave_black_logo.jpg" 
+  alt="" 
+  style={{ width: '100px', height: 'auto' }} 
+/>
         </div>
 
         {/* Create Account Title */}

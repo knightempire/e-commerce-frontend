@@ -120,12 +120,11 @@ const LoginPage = () => {
     <div className="h-screen w-full flex items-center justify-center" style={{ background: milkyWhite }}>
       <div className="w-full max-w-md p-8 rounded-xl shadow-lg" style={{ backgroundColor: 'white' }}>
         <div className="flex justify-center mb-6 cursor-pointer" onClick={() => router.push('/feed')}>
-          <Image
-            src="https://images.ctfassets.net/tyqyfq36jzv2/4LDyHu4fEajllYmI8y5bj7/124bcfb1b6a522326d7d90ac1e3debc8/Linkedin-logo-png.png"
-            alt="Company Logo"
-            width={120}
-            height={48}
-          />
+<img 
+  src="https://www.restoconnection.com/wp-content/uploads/connections-images/shopwave/logo_shopwave_black_logo.jpg" 
+  alt="" 
+  style={{ width: '100px', height: 'auto' }} 
+/>
         </div>
 
         <h2 className="text-2xl font-bold text-center mb-6" style={{ color: darkColor }}>

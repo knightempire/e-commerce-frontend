@@ -41,10 +41,12 @@ export default function HomePage() {
   const [showAlert, setShowAlert] = useState(false)
   const [alertMessage, setAlertMessage] = useState("")
 const [cartCount, setCartCount] = useState(0);
-
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { addToCart, addToWishlist, removeFromWishlist, isInWishlist, getCartCount } = useCartStore()
 
 useEffect(() => {
+     const token = localStorage.getItem("shopwave");
+    setIsLoggedIn(!!token);
   fetchCartCount().then(setCartCount);
 }, []);
 
@@ -201,6 +203,7 @@ const handleAddToCart = async (product: any) => {
 
   const handleLogout = () => {
     localStorage.removeItem("shopwave")
+     setIsLoggedIn(false);
     router.push("/auth/login")
   }
 
@@ -223,7 +226,23 @@ const handleAddToCart = async (product: any) => {
                 🔥 Offers
               </Button>
 
-              <Button variant="ghost" size="icon" onClick={() => router.push("/profile")}>
+              <Button variant="ghost" size="icon"   onClick={() => {
+    const stored = localStorage.getItem("shopwave");
+    let token = "";
+    if (stored) {
+      try {
+        token = JSON.parse(stored)?.token || "";
+      } catch (err) {
+        console.error("Invalid JSON in localStorage", err);
+      }
+    }
+
+    if (!token) {
+      showCustomAlert("Please log in to view your cart.");
+    } else {
+      router.push("/cart");
+    }
+  }}>
                 <User   className="h-5 w-5" />
               </Button>
 
@@ -236,19 +255,45 @@ const handleAddToCart = async (product: any) => {
                 )}
               </Button>
 
-              <Button variant="ghost" size="icon" className="relative" onClick={() => router.push("/cart")}>
-                <ShoppingCart className="h-5 w-5" />
-                {getCartCount() > 0 && (
-                  <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 text-xs">
-                     {cartCount}
-                  </Badge>
-                )}
-              </Button>
+    <Button
+  variant="ghost"
+  size="icon"
+  className="relative"
+  onClick={() => {
+    const stored = localStorage.getItem("shopwave");
+    let token = "";
+    if (stored) {
+      try {
+        token = JSON.parse(stored)?.token || "";
+      } catch (err) {
+        console.error("Invalid JSON in localStorage", err);
+      }
+    }
+
+    if (!token) {
+      showCustomAlert("Please log in to view your cart.");
+    } else {
+      router.push("/cart");
+    }
+  }}
+>
+  <ShoppingCart className="h-5 w-5" />
+  {cartCount > 0 && (
+    <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 text-xs">
+      {cartCount}
+    </Badge>
+  )}
+</Button>
+
 
               {/* 🚪 Logout Button */}
-              <Button variant="outline" onClick={handleLogout} className="text-red-600 border-red-600 hover:bg-red-50">
-                Logout
-              </Button>
+                <Button
+      variant="outline"
+      onClick={isLoggedIn ? handleLogout : handleLogout}
+      className={`${isLoggedIn ? "text-red-600 border-red-600 hover:bg-red-50" : ""}`}
+    >
+      {isLoggedIn ? "Logout" : "Login"}
+    </Button>
             </div>
           </div>
         </div>
